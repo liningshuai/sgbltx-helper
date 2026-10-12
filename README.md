@@ -63,6 +63,19 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider -o addopts= -q
 ```
 
+## 开发验证（GitHub 自动测试）
+
+仓库的 [`.github/workflows/tests.yml`](.github/workflows/tests.yml) 会在 PR、推送到 `main` 以及手动触发（Actions → tests → Run workflow）时运行。环境为 GitHub 托管的 Windows runner、Python 3.13 和 Node.js；Node 只用于运行现有的 `tests/dashboard_app_probe.cjs` app.js 探针。依赖按 `requirements.lock.txt` 安装，MaaFw 保持 `5.14.2`。执行命令：
+
+```powershell
+python -m pytest -p no:cacheprovider -o addopts= -q -ra
+```
+
+- 工作流只有 `contents: read` 权限，不使用 secrets，也不上传游戏账号、`config/local*.json`、运行截图或日志（这些文件本就被 `.gitignore` 排除）。
+- 只运行现有的离线测试和假后端测试，不连接 ADB 或雷电模拟器，也不发送游戏输入。
+- 任一测试失败都会使工作流失败。`-ra` 会在日志末尾列出每个 skipped 的原因；依赖本机历史实机截图的回放测试在 runner 上缺少这些工件，会被跳过。
+- **自动测试通过不等于游戏实机验收完成。** 邮件批领、日常奖励等模块的实机状态仍以 `reports/` 中的报告为准，需要在本机用真实设备另行验收。
+
 ## 命令
 
 本机配置放在被忽略的 `config/local.json`。先用只读 dry-run 检查当前画面：

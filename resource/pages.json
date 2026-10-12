@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "resolution": [
+    1080,
+    1920
+  ],
+  "entry_node": "ClaimPrimary",
+  "target_page_id": "mail_taishou_detail",
+  "captured_at": "2026-10-05T11:09:00Z",
+  "game": {
+    "package": "com.sgbltx.goodgame",
+    "versionName": "7.3",
+    "versionCode": 10,
+    "channel": null,
+    "activity": "com.gamesdk.h5.GameActivity"
+  },
+  "notes": [
+    "本文件是页面身份的唯一来源。未实测采集的条目 verified=false，execute 会据此拒绝执行动作。",
+    "采集与阈值验证流程见 docs/assets.md。",
+    "account_conflict 已用真实截图做正反样本回放验证（tests/test_recognition.py）。"
+  ],
+  "pages": [
+    {
+      "page_id": "account_conflict",
+      "role": "blocker",
+      "reason_code": "account_conflict",
+      "description": "「提示 / 重复登录账号,请重新登录游戏 / 确定」弹窗。识别到立即中止并转人工：不自动重登、不主动顶号、不点击任何按钮。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "page_account_conflict_text.png",
+          "threshold": 0.8,
+          "roi": [
+            120,
+            830,
+            840,
+            350
+          ],
+          "verified": true
+        }
+      ],
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
+    },
+    {
+      "page_id": "mail_inbox",
+      "role": "entry",
+      "description": "系统邮件列表入口。只有列表底部“一键阅读”标志可见时识别；邮件详情弹窗覆盖该标志，因此不会与详情页混淆。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "mail_list_read_button.png",
+          "threshold": 0.9,
+          "roi": [
+            300,
+            1480,
+            500,
+            200
+          ],
+          "verified": true
+        }
+      ],
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
+    },
+    {
+      "page_id": "mail_claim_detail",
+      "role": "target",
+      "description": "邮件详情弹窗，标题必须是“国庆同庆，三国献礼！”，且显式出现“领取”按钮。单轮最多点击一次。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "mail_detail_title.png",
+          "threshold": 0.9,
+          "roi": [
+            300,
+            420,
+            500,
+            110
+          ],
+          "verified": true
+        }
+      ],
+      "claimable": [
+        {
+          "template": "mail_claim_button.png",
+          "threshold": 0.97,
+          "roi": [
+            300,
+            1400,
+            500,
+            200
+          ],
+          "verified": true
+        }
+      ],
+      "already_claimed": [
+        {
+          "template": "mail_claim_success.png",
+          "threshold": 0.88,
+          "roi": [
+            300,
+            1080,
+            500,
+            140
+          ],
+          "verified": true
+        }
+      ],
+      "allowed_actions": [
+        {
+          "action_id": "claim_mail_detail_once",
+          "description": "对标题匹配的这封邮件，仅点击详情中的“领取”按钮一次。",
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "mail_taishou_detail",
+      "role": "target",
+      "description": "单封“太守奖励”邮件详情，必须匹配标题、绿色领取按钮与已验证的领取成功弹窗状态。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "mail_taishou_title.png",
+          "threshold": 0.9,
+          "roi": [
+            300,
+            420,
+            500,
+            110
+          ],
+          "verified": true
+        }
+      ],
+      "claimable": [
+        {
+          "template": "mail_claim_button.png",
+          "threshold": 0.97,
+          "roi": [
+            300,
+            1400,
+            500,
+            200
+          ],
+          "verified": true
+        }
+      ],
+      "already_claimed": [
+        {
+          "template": "mail_claim_success.png",
+          "threshold": 0.88,
+          "roi": [
+            300,
+            1080,
+            500,
+            140
+          ],
+          "verified": true
+        }
+      ],
+      "allowed_actions": [
+        {
+          "action_id": "claim_taishou_mail_once",
+          "description": "仅对标题“太守奖励”的详情执行一次领取按钮点击。",
+          "verified": true
+        }
+      ]
+    }
+  ]
+}

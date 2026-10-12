@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "resolution": [1080, 1920],
+  "entry_node": "MailBulkResourceReady",
+  "target_page_id": "mail_inbox",
+  "captured_at": "2026-10-06T03:04:53Z",
+  "game": {"package": "com.sgbltx.goodgame", "versionName": "7.3"},
+  "notes": [
+    "批量邮件状态只在本任务资源包内生效；每步由当前画面授权并在动作后重新识别。",
+    "claimable 使用系统列表可见的奖励附件图标；已读信封外观不单独作为领取成功证据。",
+    "本地旧主城正样本显示等级20，新入口样本显示等级45；profile alias 仅是工件元数据，不作为身份认证。主城、更多菜单和系统邮件页面均有实机素材；当前可见邮箱画面无附件候选，尚无有效批量奖励实测。"
+  ],
+  "pages": [
+    {
+      "page_id": "account_conflict",
+      "role": "blocker",
+      "reason_code": "account_conflict",
+      "description": "重复登录阻断弹窗。命中即停止并转人工。",
+      "verified": true,
+      "identity": [{"template": "page_account_conflict_text.png", "threshold": 0.8, "roi": [120, 830, 840, 350], "verified": true}],
+      "claimable": [], "already_claimed": [], "allowed_actions": []
+    },
+    {
+      "page_id": "main_city",
+      "role": "entry",
+      "description": "主城身份由固定顶部资源 HUD 与稳定城墙局部共同确认；More 点击目标独立识别。",
+      "verified": true,
+      "identity": [
+        {"template": "main_city_resource_coin.png", "threshold": 0.97, "roi": [400, 110, 130, 100], "verified": true},
+        {"template": "main_city_wall_marker.png", "threshold": 0.97, "roi": [440, 850, 360, 420], "verified": true}
+      ],
+      "claimable": [], "already_claimed": [], "allowed_actions": []
+    },
+    {
+      "page_id": "more_menu",
+      "role": "entry",
+      "description": "更多菜单身份：菜单标题和系统邮件入口同时命中。",
+      "verified": true,
+      "identity": [
+        {"template": "more_menu_title.png", "threshold": 0.98, "roi": [422, 590, 236, 72], "verified": true},
+        {"template": "mail_menu_entry.png", "threshold": 0.97, "roi": [835, 696, 210, 218], "verified": true}
+      ],
+      "claimable": [], "already_claimed": [],
+      "allowed_actions": [{"action_id": "open_system_mail", "description": "打开系统邮件", "verified": true}]
+    },
+    {
+      "page_id": "mail_inbox",
+      "role": "entry",
+      "description": "系统邮件页：标题与系统页签都命中后才成立。待领取附件图标只在邮件列表区域识别。",
+      "verified": true,
+      "identity": [
+        {"template": "inbox_window_title.png", "threshold": 0.98, "roi": [430, 345, 220, 75], "verified": true},
+        {"template": "system_tab_identity.png", "threshold": 0.98, "roi": [35, 415, 180, 110], "verified": true}
+      ],
+      "claimable": [{"template": "mail_attachment_seal.png", "threshold": 0.96, "roi": [900, 510, 135, 970], "verified": true}],
+      "already_claimed": [],
+      "allowed_actions": [{"action_id": "read_all_system_mail", "description": "系统邮件一键阅读并领取附件（最多提交一次）", "verified": true}]
+    },
+    {
+      "page_id": "reward_popup",
+      "role": "target",
+      "description": "批量邮件奖励前景：奖励标题与‘点击任意区域关闭’提示同时命中；独立奖励物品模板另行确认内容。",
+      "verified": true,
+      "identity": [
+        {"template": "bulk_reward_title.png", "threshold": 0.97, "roi": [360, 650, 360, 120], "verified": true},
+        {"template": "bulk_reward_dismiss_hint.png", "threshold": 0.97, "roi": [330, 1080, 420, 110], "verified": true}
+      ],
+      "claimable": [], "already_claimed": [], "allowed_actions": []
+    }
+  ]
+}

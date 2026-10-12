@@ -1,0 +1,60 @@
+{
+  "ClaimPrimary": {
+    "recognition": {
+      "type": "TemplateMatch",
+      "param": {
+        "template": [
+          "mail_taishou_title.png"
+        ],
+        "roi": [
+          300,
+          420,
+          500,
+          110
+        ],
+        "threshold": [
+          0.9
+        ]
+      }
+    },
+    "action": {
+      "type": "DoNothing",
+      "param": {}
+    },
+    "next": [
+      {
+        "name": "ClaimReward"
+      }
+    ],
+    "repeat": 1,
+    "max_hit": 1
+  },
+  "ClaimReward": {
+    "recognition": {
+      "type": "TemplateMatch",
+      "param": {
+        "template": [
+          "mail_claim_button.png"
+        ],
+        "roi": [
+          300,
+          1400,
+          500,
+          200
+        ],
+        "threshold": [
+          0.97
+        ]
+      }
+    },
+    "action": {
+      "type": "Click",
+      "param": {
+        "target": true
+      }
+    },
+    "next": [],
+    "repeat": 1,
+    "max_hit": 1
+  }
+}

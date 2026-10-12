@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="dashboard-token" content="__DASHBOARD_TOKEN__">
+  <meta name="theme-color" content="#f4f6f5">
+  <title>兵临天下 · 本地助手</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="主导航">
+      <a class="brand" href="#modules" aria-label="兵临天下本地助手首页">
+        <span class="brand-mark" aria-hidden="true">兵</span>
+        <span><strong>本地助手</strong><small>SG BLTX · LOCAL</small></span>
+      </a>
+      <nav class="nav-list">
+        <button class="nav-item is-active" data-view="modules" type="button"><span aria-hidden="true">▦</span>功能模块</button>
+        <button class="nav-item" data-view="runs" type="button"><span aria-hidden="true">◷</span>运行记录</button>
+        <button class="nav-item" data-view="settings" type="button"><span aria-hidden="true">⚙</span>设置</button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="local-dot"></span>
+        <span>仅本机访问<br><small>127.0.0.1</small></span>
+      </div>
+      <div class="sidebar-version">本地管理 · 第一阶段</div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">三国兵临天下 / 本地控制台</div>
+          <h1 id="page-title">功能模块</h1>
+        </div>
+        <div class="service-chip"><span class="status-dot"></span>本地服务运行中</div>
+      </header>
+
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <section id="submission-recovery" class="submission-recovery" aria-live="polite" hidden>
+          <span id="submission-recovery-message">请求结果尚未确认。恢复时会使用原服务实例与 request ID；此操作不会创建新的作业编号。</span>
+          <div class="submission-recovery-actions">
+            <button id="retry-submission" class="button button-secondary" type="button">恢复同一请求</button>
+            <button id="abandon-submission" class="button button-secondary" type="button">放弃恢复记录</button>
+          </div>
+        </section>
+
+      <section class="context-bar" aria-label="当前运行环境">
+        <label class="profile-picker">当前档案
+          <select id="profile-select" aria-label="选择已登记档案"></select>
+        </label>
+        <span class="context-divider"></span>
+        <div class="context-value"><span class="context-label">设备</span><strong id="device-value">尚未检查</strong></div>
+        <span class="context-divider context-hide-small"></span>
+        <div class="context-value"><span class="context-label">连接状态</span><strong class="not-checked"><span class="tiny-dot"></span>尚未检查</strong></div>
+      </section>
+
+      <section id="modules-view" class="view" aria-labelledby="page-title">
+        <div class="section-heading">
+          <div><h2>可用模块</h2><p>开关仅控制是否允许手动启动，不会自动运行。</p></div>
+          <span class="section-kicker">仅限领取任务</span>
+        </div>
+        <div id="module-list" class="module-list"></div>
+        <section class="future-card">
+          <div class="future-icon" aria-hidden="true">＋</div>
+          <div><h3>更多日常功能</h3><p>暂未开发，不会创建占位任务或模拟进度。</p></div>
+          <span class="future-badge">待开发</span>
+        </section>
+        <section id="job-panel" class="job-panel" aria-live="polite" hidden></section>
+      </section>
+
+      <section id="runs-view" class="view" hidden>
+        <div class="section-heading"><div><h2>运行记录</h2><p>记录读取自本机 artifacts；新结果完成后自动刷新。</p></div><button id="refresh-runs" class="button button-quiet" type="button">刷新记录</button></div>
+        <div id="runs-list" class="runs-list"></div>
+        <section id="run-detail" class="run-detail" hidden></section>
+      </section>
+
+      <section id="settings-view" class="view" hidden>
+        <div class="section-heading"><div><h2>运行设置</h2><p>档案选择保存在本机 UI 设置中，设备预算只读。</p></div></div>
+        <div id="settings-content" class="settings-content"></div>
+        <div class="security-note"><strong>安全边界</strong><p>网页只监听本机回环地址。不会自动登录、切号、导航或启动任务；只有手动点击任务按钮才会调用现有运行器。</p></div>
+      </section>
+
+      <footer class="footer"><span>批量邮件与日常奖励的完整实机闭环仍待验收</span><span id="last-updated">尚未读取</span></footer>
+    </main>
+  </div>
+</body>
+</html>

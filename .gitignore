@@ -1,0 +1,25 @@
+# Python environments and generated files
+/.venv/
+__pycache__/
+*.py[cod]
+/.pytest_cache/
+/build/
+/dist/
+*.egg-info/
+/.mypy_cache/
+/.ruff_cache/
+.env
+.env.*
+!.env.example
+
+# Local configuration, run evidence, screenshots and temporary probes
+/config/local.json
+/artifacts/
+/_probe*.py
+/tools/_probe*/
+/tools/_probe*.py
+/tmp/
+**/*private*.png
+**/screenshots/
+/config/local-test.json
+/config/dashboard.local.json

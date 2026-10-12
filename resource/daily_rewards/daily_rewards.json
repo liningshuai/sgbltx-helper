@@ -1,0 +1,251 @@
+{
+  "transition_wait_seconds": 8,
+  "max_daily_pages": 5,
+  "max_claims": 20,
+  "max_reward_popups": 6,
+  "max_batch_rounds": 5,
+  "scan_complete_verified": false,
+  "controls": {
+    "tasks_entry": {
+      "template": "daily_task_entry_label.png",
+      "roi": [
+        80,
+        1540,
+        200,
+        180
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "主城左下角任务入口的‘任务’字样；只有 main_city 页面身份成立时允许点按"
+    },
+    "daily_tab": {
+      "template": "daily_tab_label.png",
+      "roi": [
+        150,
+        270,
+        300,
+        150
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "政务中心顶部日常任务页签；只有 daily_hub 身份成立时点击"
+    },
+    "daily_back": {
+      "template": "daily_tasks_back_arrow.png",
+      "roi": [
+        0,
+        165,
+        190,
+        180
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "日常任务窗口左上返回箭头；页面身份确认后用于安全收尾"
+    },
+    "daily_claim_all": {
+      "template": "daily_claim_all_enabled.png",
+      "roi": [
+        820,
+        390,
+        250,
+        130
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "日常任务页顶部绿色“一键领取”；每个已确认循环最多提交一次，不触发行内按钮"
+    },
+    "daily_claim_all_disabled": {
+      "template": "daily_claim_all_disabled.png",
+      "roi": [
+        820,
+        390,
+        250,
+        130
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "日常任务页顶部灰色“一键领取”控件，仅在稳定日常页身份成立时证明当前无可领项"
+    },
+    "daily_reward_close": {
+      "template": "daily_reward_dismiss_hint_live.png",
+      "roi": [
+        330,
+        1080,
+        420,
+        110
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "已识别日常奖励前景后，点击当帧“点击任意区域关闭”提示"
+    },
+    "dismiss_known_announcement": {
+      "template": "daily_announcement_dismiss_blank.png",
+      "roi": [
+        280,
+        210,
+        150,
+        80
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "description": "仅在日常任务页命中已登记军令公告完整身份时，识别并点按页面顶部装饰横线空白区一次；绝不点击前往"
+    }
+  },
+  "daily_page": {
+    "verified": true,
+    "description": "政务 → 日常任务页身份已由真实截图正反样本验证；任务状态语义、全列表边界与活跃宝箱仍未验证"
+  },
+  "list_scroll": {
+    "verified": true,
+    "x1": 540,
+    "y1": 1550,
+    "x2": 540,
+    "y2": 700,
+    "duration_ms": 500,
+    "container_roi": [
+      44,
+      520,
+      992,
+      1300
+    ],
+    "description": "从真实日常列表首屏核验的列表视口内竖向滚动手势；不触发任何任务前往按钮"
+  },
+  "read_only_markers": {
+    "daily_tasks_zero_count": {
+      "template": "daily_tasks_count_zero.png",
+      "roi": [
+        160,
+        410,
+        230,
+        95
+      ],
+      "threshold": 0.97,
+      "verified": true,
+      "meaning": "当前首屏显示今日已完成 0/23；仅作只读计数，不授权点击"
+    }
+  },
+  "daily_projects": [
+    {
+      "project_id": "treasure_shop",
+      "name": "奇珍异宝",
+      "template": "daily_project_treasure.png",
+      "search_roi": [
+        15,
+        500,
+        430,
+        1300
+      ],
+      "threshold": 0.97,
+      "row_claim_template": "daily_row_claim_enabled.png",
+      "row_claim_threshold": 0.97,
+      "verified": true
+    },
+    {
+      "project_id": "spend_gold",
+      "name": "花点小钱",
+      "template": "daily_project_spend.png",
+      "search_roi": [
+        15,
+        500,
+        430,
+        1300
+      ],
+      "threshold": 0.97,
+      "row_claim_template": "daily_row_claim_enabled.png",
+      "row_claim_threshold": 0.97,
+      "verified": true
+    },
+    {
+      "project_id": "bookshop_visit",
+      "name": "书商到访",
+      "template": "daily_project_bookshop.png",
+      "search_roi": [
+        15,
+        500,
+        430,
+        1300
+      ],
+      "threshold": 0.97,
+      "row_claim_template": "daily_row_claim_enabled.png",
+      "row_claim_threshold": 0.97,
+      "verified": true
+    },
+    {
+      "project_id": "scholar_visit",
+      "name": "名士来访",
+      "template": "daily_project_scholar.png",
+      "search_roi": [
+        15,
+        500,
+        430,
+        1300
+      ],
+      "threshold": 0.97,
+      "row_claim_template": "daily_row_claim_enabled.png",
+      "row_claim_threshold": 0.97,
+      "verified": true
+    }
+  ],
+  "reward_items": [
+    {
+      "reward_id": "gold",
+      "template": "daily_reward_gold.png",
+      "roi": [
+        80,
+        750,
+        920,
+        430
+      ],
+      "threshold": 0.97,
+      "verified": true
+    },
+    {
+      "reward_id": "competition",
+      "template": "daily_reward_competition.png",
+      "roi": [
+        80,
+        750,
+        920,
+        430
+      ],
+      "threshold": 0.97,
+      "verified": true
+    },
+    {
+      "reward_id": "silver",
+      "template": "daily_reward_silver.png",
+      "roi": [
+        80,
+        750,
+        920,
+        430
+      ],
+      "threshold": 0.97,
+      "verified": true
+    },
+    {
+      "reward_id": "grain",
+      "template": "daily_reward_grain.png",
+      "roi": [
+        80,
+        750,
+        920,
+        430
+      ],
+      "threshold": 0.97,
+      "verified": true
+    },
+    {
+      "reward_id": "merit",
+      "template": "daily_reward_merit.png",
+      "roi": [
+        80,
+        750,
+        920,
+        430
+      ],
+      "threshold": 0.97,
+      "verified": true
+    }
+  ]
+}

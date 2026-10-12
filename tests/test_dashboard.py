@@ -22,7 +22,28 @@ from sgbltx_helper.dashboard.server import create_server
 from sgbltx_helper.cli import EXIT_OK, main
 
 
-PROJECT = Path(__file__).resolve().parents[1]
+SOURCE_PROJECT = Path(__file__).resolve().parents[1]
+PROJECT = SOURCE_PROJECT
+
+
+@pytest.fixture(autouse=True)
+def isolated_dashboard_profiles(tmp_path, monkeypatch):
+    """Use synthetic profiles; never require or modify the user's local files."""
+    project = tmp_path / "dashboard-project"
+    config = project / "config"
+    config.mkdir(parents=True)
+    example = (SOURCE_PROJECT / "config" / "example.json").read_text(encoding="utf-8")
+    for filename, profile_id, alias in (
+        ("local.json", "local-main", "test_main"),
+        ("local-test.json", "local-test-mail", "test_mail"),
+    ):
+        raw = json.loads(example)
+        raw["profile"]["profile_id"] = profile_id
+        raw["profile"]["account_alias"] = alias
+        raw["profile"]["device"]["adb_path"] = "C:/test-only/adb.exe"
+        raw["profile"]["device"]["serial"] = "test-device-not-real"
+        (config / filename).write_text(json.dumps(raw), encoding="utf-8")
+    monkeypatch.setattr(sys.modules[__name__], "PROJECT", project)
 
 
 def _wait_for(manager: JobManager, predicate, timeout: float = 2.0) -> dict:
@@ -736,7 +757,7 @@ def test_dashboard_cli_default_port_is_outside_current_windows_exclusion():
 def test_dashboard_static_files_are_declared_as_package_data():
     package = importlib.resources.files("sgbltx_helper.dashboard")
     assert package.joinpath("static", "index.html").is_file()
-    config = tomllib.loads((PROJECT / "pyproject.toml").read_text(encoding="utf-8"))
+    config = tomllib.loads((SOURCE_PROJECT / "pyproject.toml").read_text(encoding="utf-8"))
     assert "sgbltx_helper" in config.get("tool", {}).get("setuptools", {}).get("package-data", {})
     assert any("dashboard/static" in item for item in config["tool"]["setuptools"]["package-data"]["sgbltx_helper"])
 
@@ -745,8 +766,8 @@ def test_dashboard_actual_app_js_submission_and_rendering_regressions():
     node = shutil.which("node")
     if not node:
         pytest.skip("Node.js is required for the actual app.js VM regression harness")
-    script = PROJECT / "tests" / "dashboard_app_probe.cjs"
-    completed = subprocess.run([node, str(script), str(PROJECT / "src" / "sgbltx_helper" / "dashboard" / "static" / "app.js")], capture_output=True, text=True, timeout=15)
+    script = SOURCE_PROJECT / "tests" / "dashboard_app_probe.cjs"
+    completed = subprocess.run([node, str(script), str(SOURCE_PROJECT / "src" / "sgbltx_helper" / "dashboard" / "static" / "app.js")], capture_output=True, text=True, timeout=15)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert '"rapidSubmissionCount":1' in completed.stdout
     assert '"retryRequestIdsSame":true' in completed.stdout
@@ -754,7 +775,7 @@ def test_dashboard_actual_app_js_submission_and_rendering_regressions():
 
 
 def test_one_click_launcher_uses_its_own_directory_and_keeps_errors_visible():
-    launcher = (PROJECT / "start-dashboard.cmd").read_text(encoding="utf-8")
+    launcher = (SOURCE_PROJECT / "start-dashboard.cmd").read_text(encoding="utf-8")
     assert 'cd /d "%~dp0"' in launcher
     assert '".venv\\Scripts\\python.exe" -m sgbltx_helper dashboard' in launcher
     assert "pause" in launcher

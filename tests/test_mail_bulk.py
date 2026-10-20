@@ -672,3 +672,90 @@ def test_city_background_with_account_conflict_does_not_confirm_cleanup(tmp_path
     assert result.detail["cleanup_verified"] is False
     assert result.detail["claim_action_count"] == (1 if route == "claim_mail" else 0)
     assert result.detail["dismiss_action_count"] == (1 if route == "recover_direct" else 2)
+
+
+def _with_reward_hint_identity(project, transition_wait_seconds: float = 0.6) -> None:
+    path = project.resource_root / "mail_bulk" / "pages.json"
+    pages = json.loads(path.read_text(encoding="utf-8"))
+    next(page for page in pages["pages"] if page["page_id"] == "reward_popup")["identity"].append(
+        {"template": "reward_hint.png", "verified": True}
+    )
+    path.write_text(json.dumps(pages), encoding="utf-8")
+    config_path = project.resource_root / "mail_bulk" / "mail_bulk.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["transition_wait_seconds"] = transition_wait_seconds
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+
+
+# 2026-10-20 实机：一键阅读后第一帧奖励动画未完成，只露出关闭提示，标题尚未出现，
+# 背后邮件列表完整，分类为 mail_inbox/reward_popup 歧义。
+_CLAIM_ANIMATION_FRAME = {"reward_hint.png": True, "mail_title.png": True, "system_tab.png": True,
+                          "bulk_read.png": True, "mail_close.png": True}
+
+
+def test_bulk_waits_through_first_reward_animation_after_claim(tmp_path):
+    project = _make_bulk_project(tmp_path)
+    _with_reward_hint_identity(project)
+    backend = FakeBackend(script=[
+        {"mail_title.png": True, "system_tab.png": True, "pending.png": True, "bulk_read.png": True},
+        _CLAIM_ANIMATION_FRAME,
+        {"reward_popup.png": True, "reward_hint.png": True, "reward_item.png": True, "reward_close.png": True},
+        {"mail_title.png": True, "system_tab.png": True, "read.png": True, "empty_state.png": True, "mail_close.png": True},
+        {"city.png": True},
+    ])
+    result = _run_bulk(project, backend)
+    assert result.status is RunStatus.COMPLETED, result.detail["message"]
+    assert result.detail["claim_action_count"] == 1
+    assert result.detail["dismiss_action_count"] == 2
+    assert [call[0] for call in backend.input_calls].count("click") == 3
+
+
+def test_bulk_persistent_claim_animation_stops_without_further_input(tmp_path):
+    project = _make_bulk_project(tmp_path)
+    _with_reward_hint_identity(project, transition_wait_seconds=0.3)
+    backend = FakeBackend(script=[
+        {"mail_title.png": True, "system_tab.png": True, "pending.png": True, "bulk_read.png": True},
+        _CLAIM_ANIMATION_FRAME,
+    ])
+    result = _run_bulk(project, backend)
+    assert result.status is RunStatus.NEEDS_ATTENTION
+    assert result.reason_code is ReasonCode.UNKNOWN_PAGE
+    assert result.detail["claim_action_count"] == 1
+    assert result.action_count == 1
+    assert backend.screencap_count >= 3  # 只读等待期间多次截图，未再输入
+
+
+def test_checked_in_reward_popup_limit_fits_phase_one_action_cap():
+    from sgbltx_helper.contracts import MAX_MAX_ACTIONS
+
+    config = json.loads(
+        (Path(__file__).resolve().parents[1] / "resource" / "mail_bulk" / "mail_bulk.json").read_text(encoding="utf-8")
+    )
+    # 实机一次一键阅读出现 16 张奖励弹窗；导航 2 + 领取 1 + 邮件 X 1 共用同一动作上限。
+    assert config["max_reward_popups"] >= 16
+    assert config["max_reward_popups"] + 4 <= MAX_MAX_ACTIONS
+
+
+def test_bulk_closes_sixteen_rewards_in_one_run_within_action_cap(tmp_path):
+    project = _make_bulk_project(tmp_path)
+    config_path = project.resource_root / "mail_bulk" / "mail_bulk.json"
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["max_reward_popups"] = 26
+    config_path.write_text(json.dumps(config), encoding="utf-8")
+    rewards = [
+        {"reward_popup.png": True, "mail_title.png": True,
+         ("reward_item.png" if i % 2 == 0 else "reward_item_second.png"): True, "reward_close.png": True}
+        for i in range(16)
+    ]
+    backend = FakeBackend(script=[
+        {"city.png": True, "more_button.png": True},
+        {"more_page.png": True, "mail_button.png": True},
+        {"mail_title.png": True, "system_tab.png": True, "pending.png": True, "bulk_read.png": True},
+        *rewards,
+        {"mail_title.png": True, "system_tab.png": True, "read.png": True, "empty_state.png": True, "mail_close.png": True},
+        {"city.png": True},
+    ])
+    result = _run_bulk(project, backend, max_actions=30)
+    assert result.status is RunStatus.COMPLETED, result.detail["message"]
+    assert result.detail["reward_popup_count"] == 16
+    assert result.action_count == 20

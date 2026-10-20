@@ -1,6 +1,6 @@
 {
   "transition_wait_seconds": 8,
-  "max_reward_popups": 6,
+  "max_reward_popups": 26,
   "reward_items": [
     {"template": "bulk_reward_gold.png", "roi": [100, 800, 240, 300], "threshold": 0.97, "verified": true},
     {"template": "bulk_reward_competition.png", "roi": [320, 800, 240, 300], "threshold": 0.97, "verified": true},

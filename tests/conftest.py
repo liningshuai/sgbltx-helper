@@ -260,3 +260,27 @@ def default_pipeline(*, actions: int = 1) -> dict[str, Any]:
 @pytest.fixture
 def project(tmp_path: Path) -> ProjectFixture:
     return make_project(tmp_path)
+
+
+REAL_RUNS = PROJECT_ROOT / "artifacts" / "runs"
+
+
+def snapshot_real_runs() -> set[str]:
+    if not REAL_RUNS.is_dir():
+        return set()
+    return {entry.name for entry in REAL_RUNS.iterdir()}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def guard_real_run_artifacts():  # type: ignore[no-untyped-def]
+    """测试不得在本机真实 artifacts/runs 下新建或删除运行目录。
+
+    runner 每次运行都会按保留期清理 runs；测试若以项目根运行，会删掉实机证据。
+    """
+    before = snapshot_real_runs()
+    yield
+    after = snapshot_real_runs()
+    removed = sorted(before - after)
+    added = sorted(after - before)
+    if removed or added:
+        pytest.fail(f"测试改动了真实 artifacts/runs：删除 {removed}，新增 {added}")

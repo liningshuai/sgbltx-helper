@@ -31,6 +31,7 @@ class BubbleScan:
     score: float | None
     verified_matchers: int
     invasion_rejected: int
+    exclusion_verified: bool = True
 
 
 def _matcher(raw: dict[str, Any], default_roi: list[int] | tuple[int, ...] = (0, 0, 0, 0)) -> Matcher:
@@ -76,8 +77,7 @@ def find_bubble(
         for (x, y, w, h), score in hits:
             center = (x + w // 2, y + h // 2)
             if label is None:
-                # 没有已验证的"入侵"排除素材时不授权任何候选。
-                rejected += 1
+                # 没有已验证的"入侵"排除素材时不授权任何候选，也不计作已排除。
                 continue
             dx, dy, ow, oh = (int(v) for v in offset)
             region = _clamped_roi(center[0] + dx, center[1] + dy, ow, oh)
@@ -92,6 +92,7 @@ def find_bubble(
         score=best[0] if best else None,
         verified_matchers=len(matchers),
         invasion_rejected=rejected,
+        exclusion_verified=label is not None,
     )
 
 
@@ -281,7 +282,8 @@ def run_fief_industry(
                 return cls_after, True
             if page_id == "reward_popup" and exit_seen:
                 return cls_after, True
-            if page_id != "reward_popup":
+            reward_cue = any(o.hit for o in cls_after.observations if o.name.startswith("reward_popup:identity:"))
+            if not reward_cue and not cls_after.ambiguous_pages:
                 exit_seen = True
             if time.monotonic() >= end_of_window:
                 return cls_after, exit_seen
@@ -321,6 +323,8 @@ def run_fief_industry(
         if scan is not None:
             if scan.verified_matchers == 0:
                 notes.append("资源气泡素材待首次实机采样验证；不能据此判断有无产出。")
+            elif not scan.exclusion_verified:
+                notes.append("“入侵”排除素材未验证；不能据此判断有无产出。")
             elif scan.candidate is None:
                 notes.append("当前视野内未识别到可点的资源气泡（仅代表当前视野）。")
             else:
@@ -359,12 +363,30 @@ def run_fief_industry(
         assert scan is not None
         if not cls.page or not cls.page.verified:
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.ASSETS_UNVERIFIED, "主城页面身份尚未验证")
-        if scan.verified_matchers == 0:
+        if scan.verified_matchers == 0 or not scan.exclusion_verified:
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.ASSETS_UNVERIFIED,
-                          "资源气泡素材待首次实机采样验证；未发出输入")
+                          "资源气泡或“入侵”排除素材待验证；未发出输入")
         if scan.candidate is None:
             return finish(RunStatus.NOTHING_TO_CLAIM, ReasonCode.NOTHING_TO_CLAIM,
                           "当前视野内没有可点的资源气泡；未发出输入")
+
+        fresh = guarded(lambda: (screenshot(), None)[0])
+        if isinstance(fresh, TaskResult):
+            return fresh
+        if fresh.blockers:
+            return finish(RunStatus.NEEDS_ATTENTION, _blocker_reason(fresh), "点击前新鲜画面出现阻断提示；未发出输入")
+        if fresh.ambiguous_pages or page_id_of(fresh) != "main_city":
+            return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE, "点击前新鲜画面不再是主城；未发出输入")
+        fresh_scan = guarded(lambda: find_bubble(backend, current_image, config, deadline, stop.should_stop))
+        if isinstance(fresh_scan, TaskResult):
+            return fresh_scan
+        scan = fresh_scan
+        log("classify", "fief_fresh_bubble_scan", {
+            "bubble": scan.candidate, "bubble_template": scan.template, "invasion_rejected": scan.invasion_rejected,
+        })
+        if scan.candidate is None:
+            return finish(RunStatus.NOTHING_TO_CLAIM, ReasonCode.NOTHING_TO_CLAIM,
+                          "点击前新鲜画面视野内已没有可点的资源气泡；未发出输入")
 
         def mark_claim_submitted() -> None:
             nonlocal claim_request_submitted
@@ -383,8 +405,10 @@ def run_fief_industry(
         if page_id_of(cls) != "reward_popup":
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.OUTCOME_UNCERTAIN,
                           "点击气泡后未出现产业奖励弹窗；不能确认领取，不会重试")
-        claim_verified = True
-        log("verify", "fief_reward_observed", {})
+        reward_assets_verified = bool(cls.page and cls.page.verified) and bool(
+            isinstance(controls.get("reward_close"), dict) and controls["reward_close"].get("verified"))
+        claim_verified = reward_assets_verified
+        log("verify", "fief_reward_observed", {"reward_assets_verified": reward_assets_verified})
 
     while True:
         page_id = page_id_of(cls)

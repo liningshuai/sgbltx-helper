@@ -508,6 +508,10 @@ def run(
                 popups = flow_config.get("max_reward_popups")
                 if type(popups) is not int or not 1 <= popups <= 10:
                     raise ContractError("max_reward_popups 必须是 1 到 10 的整数")
+                wait_seconds = flow_config.get("transition_wait_seconds")
+                if (isinstance(wait_seconds, bool) or not isinstance(wait_seconds, (int, float))
+                        or not 0 < wait_seconds <= min(30, request.timeout_seconds)):
+                    raise ContractError("transition_wait_seconds 必须是大于 0 且不超过整轮超时/30 秒的数字")
             except (OSError, UnicodeError, json.JSONDecodeError, ContractError) as exc:
                 _log(ws, seq, "resource", "fief_industry_config_invalid", {"message": str(exc)})
                 return _result(

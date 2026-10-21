@@ -379,3 +379,13 @@ Maa 每次仍打印 `dumpsys input | grep ...` 方向查询 ADB 子命令错误�
 | `run-20261021T105009Z-23052` | 复跑 `nothing_to_claim`：列表无待领，关闭邮件回主城，领取 0 |
 
 状态：实机领取、批后列表与回城收尾已跑通，复跑零领取已确认；物品识别修正后的单次 `completed` 待下次有新邮件附件时复核。
+
+
+## 2026-10-21 单次运行完整闭环验收
+
+| 运行 | 结果 |
+| --- | --- |
+| `run-20261021T145750Z-42540` | **`completed/claim_confirmed`**：主城 → 更多 → 邮件（新的太守奖励等附件邮件）→ 一键阅读 1 次 → 奖励弹窗命中黄金、竞技币 → 关闭 1 次 → 列表确认无待领 → 关闭邮件 → 主城。导航 2、领取 1、关闭 2；`claim_verified`、`reward_evidence_complete`、`post_batch_state_verified`、`cleanup_verified` 均为 true |
+| `run-20261021T145818Z-28872` | 复跑 `nothing_to_claim`：领取 0，回到主城 |
+
+状态：**已实机验收**。

@@ -36,7 +36,7 @@ py -3.13 -m venv .venv
 - 遇到账号冲突、陌生页面或状态不确定时停止。当前样本只覆盖 `1080x1920` 的已测界面。
 - “网络有异常”提示和“魏帝”当选公告已登记为阻断页：批量邮件、日常、封地三个任务遇到时零输入停止，`reason_code` 分别为 `network_error`、`announcement`，message 写明“网络异常：请重启游戏后重新登录”或“魏帝公告：请手动关闭”。程序不点“确定”或空白处，处理后再运行即可。
 
-批量邮件任务仍处于实机验收阶段。主城识别采用固定资源 HUD 与稳定城墙局部的 AND 判据，并独立识别 More 图形中心。确认奖励弹窗身份和关闭提示后，即使物品模板未命中也可安全收尾，但保留领取证据不完整，不报告 `completed`。关闭后的旧帧和奖励前景动画只读等待，受单步窗口、整轮截止时间和停止信号限制；未知页面及顶号提示不授权输入。若任务启动时已在奖励弹窗，则进入 `cleanup_only`：只关闭奖励及邮件回主城，即使列表有新邮件也不点一键阅读。实机收尾 `run-20261007T034925Z-202688` 为领取 0、关闭 2、`cleanup_verified=true`，最终截图识别为 `main_city`；此前领取结果仍不确定，新一轮完整批领及重复运行未验收。等级与 alias 仅作样本/工件元数据，不用于认证。详情见 [`reports/mail-bulk-report.md`](reports/mail-bulk-report.md)。
+批量邮件任务已于 2026-10-21 实机验收（`run-20261021T145750Z-42540` completed/claim_confirmed，复跑 `nothing_to_claim`），以下为历史过程记录。主城识别采用固定资源 HUD 与稳定城墙局部的 AND 判据，并独立识别 More 图形中心。确认奖励弹窗身份和关闭提示后，即使物品模板未命中也可安全收尾，但保留领取证据不完整，不报告 `completed`。关闭后的旧帧和奖励前景动画只读等待，受单步窗口、整轮截止时间和停止信号限制；未知页面及顶号提示不授权输入。若任务启动时已在奖励弹窗，则进入 `cleanup_only`：只关闭奖励及邮件回主城，即使列表有新邮件也不点一键阅读。实机收尾 `run-20261007T034925Z-202688` 为领取 0、关闭 2、`cleanup_verified=true`，最终截图识别为 `main_city`；此前领取结果仍不确定，新一轮完整批领及重复运行未验收。等级与 alias 仅作样本/工件元数据，不用于认证。详情见 [`reports/mail-bulk-report.md`](reports/mail-bulk-report.md)。
 
 “太守奖励”新邮件已在成功模板预先登记后完成实机闭环：execute 自动返回 `completed/claim_confirmed`、action_count=1；同封邮件再次运行返回 `nothing_to_claim`、action_count=0。此前“国庆同庆，三国献礼！”首次领取的原始 `result.json` 仍保留 `needs_attention/outcome_uncertain`，没有改写。单封人工定位领取验收已完成；主城导航、其他邮件和无人值守日常仍不在本原型范围。详情见 [`reports/phase1-report.md`](reports/phase1-report.md)。
 

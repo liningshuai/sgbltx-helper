@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "resolution": [
+    1080,
+    1920
+  ],
+  "captured_at": "2026-10-21T07:01:59Z",
+  "game": {
+    "package_name": "com.sgbltx.goodgame",
+    "version": "unverified",
+    "channel": "unverified"
+  },
+  "entry_node": "FiefIndustryNoInput",
+  "target_page_id": "main_city",
+  "notes": [
+    "主城、顶号与两个军令公告身份照抄 resource/daily_rewards/pages.json（已实机验证）。",
+    "reward_popup 复用邮件奖励弹窗素材，产业场景尚无实机样本，页面与身份均为未验证。",
+    "资源气泡素材待首次实机采样；负样本来自 dryrun-20261021T070159Z-39596（入侵标记、农田卷轴标记）。"
+  ],
+  "pages": [
+    {
+      "page_id": "account_conflict",
+      "role": "blocker",
+      "reason_code": "account_conflict",
+      "description": "账号冲突或重复登录提示",
+      "verified": true,
+      "identity": [
+        {
+          "template": "page_account_conflict_text.png",
+          "roi": [
+            120,
+            830,
+            840,
+            350
+          ],
+          "threshold": 0.8,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "unrelated_announcement",
+      "role": "blocker",
+      "reason_code": "unknown_page",
+      "description": "随机攻城令公告为阻断页；仅执行模式、仅底层日常任务页身份成立且空白目标命中时，允许一次空白关闭尝试，随后必须重识别；永不点击前往",
+      "verified": true,
+      "identity": [
+        {
+          "template": "daily_unrelated_announcement_title.png",
+          "roi": [
+            470,
+            1310,
+            500,
+            140
+          ],
+          "threshold": 0.97,
+          "verified": true
+        },
+        {
+          "template": "daily_unrelated_announcement_forward.png",
+          "roi": [
+            780,
+            1490,
+            260,
+            170
+          ],
+          "threshold": 0.97,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "unrelated_announcement_defense",
+      "role": "blocker",
+      "reason_code": "unknown_page",
+      "description": "随机守城令发布公告变体；只有标题与前往按钮 AND 命中时作为阻断，执行仅允许日常页经验证空白区关闭",
+      "verified": true,
+      "identity": [
+        {
+          "template": "daily_unrelated_announcement_defense_title.png",
+          "roi": [
+            480,
+            1310,
+            500,
+            140
+          ],
+          "threshold": 0.97,
+          "verified": true
+        },
+        {
+          "template": "daily_unrelated_announcement_forward.png",
+          "roi": [
+            780,
+            1490,
+            260,
+            170
+          ],
+          "threshold": 0.97,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "main_city",
+      "role": "entry",
+      "description": "主城固定资源 HUD 与可见城墙局部同时命中",
+      "verified": true,
+      "identity": [
+        {
+          "template": "main_city_resource_coin.png",
+          "roi": [
+            400,
+            110,
+            130,
+            100
+          ],
+          "threshold": 0.97,
+          "verified": true
+        },
+        {
+          "template": "main_city_wall_marker.png",
+          "roi": [
+            440,
+            850,
+            360,
+            420
+          ],
+          "threshold": 0.97,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "reward_popup",
+      "role": "target",
+      "description": "产业奖励弹窗：复用邮件‘获得奖励’标题与‘点击任意区域关闭’提示；待产业实机样本验证前不授权关闭。",
+      "verified": false,
+      "identity": [
+        {
+          "template": "fief_reward_title.png",
+          "threshold": 0.97,
+          "roi": [
+            360,
+            650,
+            360,
+            120
+          ],
+          "verified": false
+        },
+        {
+          "template": "fief_reward_dismiss_hint.png",
+          "threshold": 0.97,
+          "roi": [
+            330,
+            1080,
+            420,
+            110
+          ],
+          "verified": false
+        }
+      ],
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "FiefIndustryNoInput": {
+    "recognition": {
+      "type": "TemplateMatch",
+      "param": {
+        "template": [
+          "main_city_resource_coin.png"
+        ],
+        "roi": [
+          400,
+          110,
+          130,
+          100
+        ],
+        "threshold": [
+          0.97
+        ]
+      }
+    },
+    "action": {
+      "type": "DoNothing",
+      "param": {}
+    },
+    "next": [],
+    "repeat": 1,
+    "max_hit": 1
+  }
+}

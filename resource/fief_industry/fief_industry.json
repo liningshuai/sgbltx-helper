@@ -1,0 +1,37 @@
+{
+  "transition_wait_seconds": 8,
+  "max_reward_popups": 4,
+  "bubble_search_roi": [
+    120,
+    330,
+    790,
+    1240
+  ],
+  "resource_bubbles": [],
+  "invasion_label": {
+    "template": "fief_invasion_label.png",
+    "offset_roi": [
+      -90,
+      20,
+      180,
+      110
+    ],
+    "threshold": 0.9,
+    "verified": true,
+    "description": "‘入侵’红底字样；位于候选气泡中心下方即丢弃该候选。来源 dryrun-20261021T070159Z-39596。"
+  },
+  "controls": {
+    "reward_close": {
+      "template": "fief_reward_dismiss_hint.png",
+      "roi": [
+        330,
+        1080,
+        420,
+        110
+      ],
+      "threshold": 0.97,
+      "verified": false,
+      "description": "产业奖励弹窗‘点击任意区域关闭’提示；复用邮件素材，待产业实机样本验证"
+    }
+  }
+}

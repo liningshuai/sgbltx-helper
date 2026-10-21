@@ -123,3 +123,20 @@ py -3.13 -m venv .venv
 网页模块卡片显示一键领取循环、日常页公告跳过限制和部分验收状态；当前作业及历史详情显示流程已确认轮次、批后状态、返回主城和公告处理，物品名称不影响确认计数。`cleanup_only` 明确显示为仅收尾，不改写先前领取结果。模块仍默认关闭。
 
 旧 8782 服务仍运行旧的模块注册信息，需要重新启动才能读取新模块。本轮自动启动被审批拦截；可双击 [start-dashboard-daily.cmd](start-dashboard-daily.cmd) 在 `http://127.0.0.1:8783/` 启动更新后的助手。此入口只启动本机网页，不连接设备；保留启动窗口，按 `Ctrl+C` 停止。原入口和默认 CLI 端口仍为 8782。
+
+## 封地产业收取（素材待首次实机采样）
+
+模块 `fief_industry_collect`：主城地图上产业攒了产出时会出现带资源图标和数字的气泡，点任意一个就会一次领完全部产出，随后出现“获得奖励”弹窗。程序从已识别的主城出发，只点一个已验证、未被遮挡、下方没有“入侵”字样的资源气泡，每轮最多一次；领取后只读等待弹窗动画，逐张关闭（最多 4 张，每张需先观察到前景退出），最后确认主城视野内不再有气泡才报告 `completed`。不拖动地图，不点入侵、卷轴、贸易等其他标记，不在未登记弹窗上点空白。网页模块默认关闭。
+
+当前资源气泡模板为空，产业奖励弹窗复用的邮件素材也未在产业场景验证，因此 execute 会以 `assets_unverified` 零输入停止，dry-run 也不会据此判断“没有产出”。首次启用步骤：
+
+1. 主城出现资源气泡时，先在网页或命令行做一次只读检查，截图自动保存在 `artifacts/runs/dryrun-*/before.png`。
+2. 用该截图裁剪气泡图标模板（只取圆盘内部，不含地图背景），与已有负样本（入侵标记、农田卷轴标记）一起验证后写入 `resource/fief_industry/fief_industry.json` 的 `resource_bubbles`。
+3. 运行 execute。若产业奖励弹窗未被识别，程序会在领取后零额外输入停止；用该弹窗截图验证弹窗素材后，再运行一次即进入仅收尾模式回到主城。
+
+```powershell
+.\.venv\Scripts\python.exe -m sgbltx_helper run --profile config/local-test.json --task fief_industry_collect --dry-run
+.\.venv\Scripts\python.exe -m sgbltx_helper run --profile config/local-test.json --task fief_industry_collect --execute
+```
+
+视野内没有气泡时返回 `nothing_to_claim`，结果中 `visible_area_only=true`，不代表屏幕外的产业没有产出。验收状态见 [`reports/fief-industry-report.md`](reports/fief-industry-report.md)。

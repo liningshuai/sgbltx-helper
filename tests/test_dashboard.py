@@ -58,10 +58,13 @@ def _wait_for(manager: JobManager, predicate, timeout: float = 2.0) -> dict:
 
 def test_registry_exposes_tasks_and_two_fixed_profiles(tmp_path):
     tasks = list_tasks()
-    assert {task["task_id"] for task in tasks} == {"mail_bulk_claim", "claim_primary", "daily_rewards_claim"}
+    assert {task["task_id"] for task in tasks} == {"mail_bulk_claim", "claim_primary", "daily_rewards_claim", "fief_industry_collect"}
     assert next(task for task in tasks if task["task_id"] == "mail_bulk_claim")["enabled_by_default"] is True
     assert next(task for task in tasks if task["task_id"] == "claim_primary")["enabled_by_default"] is False
     assert next(task for task in tasks if task["task_id"] == "daily_rewards_claim")["enabled_by_default"] is False
+    fief = next(task for task in tasks if task["task_id"] == "fief_industry_collect")
+    assert fief["enabled_by_default"] is False
+    assert "待首次实机采样" in fief["acceptance"]
 
     profiles = list_profiles(tmp_path)
     assert {profile["profile_id"] for profile in profiles} == {"local-main", "local-test-mail"}
@@ -72,7 +75,7 @@ def test_registry_exposes_tasks_and_two_fixed_profiles(tmp_path):
 def test_settings_defaults_persist_and_reject_unregistered_tasks(tmp_path):
     path = tmp_path / "settings.json"
     settings = SettingsStore(path)
-    assert settings.load()["modules"] == {"mail_bulk_claim": True, "claim_primary": False, "daily_rewards_claim": False}
+    assert settings.load()["modules"] == {"mail_bulk_claim": True, "claim_primary": False, "daily_rewards_claim": False, "fief_industry_collect": False}
     saved = settings.set_enabled("claim_primary", True)
     assert saved["modules"]["claim_primary"] is True
     assert SettingsStore(path).load()["modules"]["claim_primary"] is True
@@ -98,6 +101,12 @@ def test_disabled_module_cannot_start_before_profile_resolution(tmp_path):
     manager = JobManager(tmp_path, settings, lambda *args: {})
     with pytest.raises(ValueError, match="disabled"):
         manager.start("request-1", "claim_primary", "missing-profile", "dry-run")
+
+
+def test_fief_module_is_disabled_by_default_and_cannot_start(tmp_path):
+    manager = JobManager(tmp_path, SettingsStore(tmp_path / "settings.json"), lambda *args: {})
+    with pytest.raises(ValueError, match="disabled"):
+        manager.start("request-fief", "fief_industry_collect", "local-test-mail", "dry-run")
 
 
 def test_job_mode_and_registry_are_server_side_allowlisted(tmp_path):

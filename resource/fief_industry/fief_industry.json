@@ -7,18 +7,35 @@
     790,
     1160
   ],
-  "resource_bubbles": [],
+  "resource_bubbles": [
+    {
+      "template": "fief_bubble_grain.png",
+      "threshold": 0.97,
+      "verified": true,
+      "description": "粮食气泡圆盘内接方形；来源 dryrun-20261021T075155Z-34992 下方农田 (296,1251)"
+    },
+    {
+      "template": "fief_bubble_coin.png",
+      "threshold": 0.97,
+      "verified": true,
+      "description": "铜钱气泡圆盘内接方形；来源同上矿场 (834,583)。与入侵标记铜钱图标几乎相同，必须依赖入侵排除"
+    }
+  ],
   "invasion_label": {
-    "template": "fief_invasion_label.png",
+    "templates": [
+      "fief_invasion_label.png",
+      "fief_invasion_label_upright.png"
+    ],
     "offset_roi": [
       -90,
       20,
       180,
       110
     ],
-    "threshold": 0.9,
+    "threshold": 0.8,
+    "red_min_pixels": 150,
     "verified": true,
-    "description": "‘入侵’红底字样；位于候选气泡中心下方即丢弃该候选。来源 dryrun-20261021T070159Z-39596。"
+    "description": "候选气泡中心下方区域：红底“入侵”横幅饱和红像素≥150（与姿态无关），或任一姿态的“入侵”字样模板≥0.8，即丢弃该候选。入侵标记有摆动动画；倾斜姿态来源 dryrun-20261021T070159Z-39596，正立姿态来源 dryrun-20261021T075155Z-34992。实测入侵横幅约 603–616 红像素，粮食/铜钱气泡下方 0/10。"
   },
   "controls": {
     "reward_close": {
@@ -30,8 +47,8 @@
         110
       ],
       "threshold": 0.97,
-      "verified": false,
-      "description": "产业奖励弹窗‘点击任意区域关闭’提示；复用邮件素材，待产业实机样本验证"
+      "verified": true,
+      "description": "产业奖励弹窗‘点击任意区域关闭’紧贴文字（433,1114,215x28）；来源 dryrun-20261021T075940Z-42720，点击位置为提示中心。"
     }
   }
 }

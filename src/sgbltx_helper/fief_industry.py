@@ -50,6 +50,16 @@ def _clamped_roi(x: int, y: int, w: int, h: int) -> tuple[int, int, int, int]:
     return (x0, y0, max(1, x1 - x0), max(1, y1 - y0))
 
 
+def _red_banner_pixels(image: np.ndarray, region: tuple[int, int, int, int]) -> int:
+    """统计区域内饱和红像素（BGR 图）；红底“入侵”横幅不论摆动到什么角度都会大量命中。"""
+    x, y, w, h = region
+    patch = image[y:y + h, x:x + w].astype(np.int16)
+    if patch.ndim != 3 or patch.shape[2] < 3:
+        return 0
+    blue, green, red = patch[..., 0], patch[..., 1], patch[..., 2]
+    return int(((red > 150) & (green < 80) & (blue < 90)).sum())
+
+
 def find_bubble(
     backend: Backend, image: np.ndarray, config: dict[str, Any],
     deadline: float | None = None, should_stop: Callable[[], bool] | None = None,
@@ -61,8 +71,13 @@ def find_bubble(
         if isinstance(raw, dict) and raw.get("verified")
     ]
     label_raw = config.get("invasion_label")
-    label = _matcher(label_raw) if isinstance(label_raw, dict) and label_raw.get("verified") else None
-    offset = label_raw.get("offset_roi", [-90, 20, 180, 110]) if label else None
+    label_verified = isinstance(label_raw, dict) and bool(label_raw.get("verified"))
+    label_templates: list[str] = []
+    if label_verified:
+        label_templates = [str(t) for t in (label_raw.get("templates") or [label_raw.get("template")]) if t]
+    label_threshold = float(label_raw.get("threshold", 0.8)) if label_verified else 0.0
+    red_min_pixels = label_raw.get("red_min_pixels") if label_verified else None
+    offset = label_raw.get("offset_roi", [-90, 20, 180, 110]) if label_verified else None
     best: tuple[float, tuple[int, int], str] | None = None
     rejected = 0
     for m in matchers:
@@ -76,12 +91,18 @@ def find_bubble(
             hits.append((outcome.box, float(outcome.score or 0.0)))
         for (x, y, w, h), score in hits:
             center = (x + w // 2, y + h // 2)
-            if label is None:
+            if not label_verified or not label_templates:
                 # 没有已验证的"入侵"排除素材时不授权任何候选，也不计作已排除。
                 continue
             dx, dy, ow, oh = (int(v) for v in offset)
             region = _clamped_roi(center[0] + dx, center[1] + dy, ow, oh)
-            if backend.recognize(image, label.template, region, label.threshold, deadline, should_stop).hit:
+            if isinstance(red_min_pixels, int) and _red_banner_pixels(image, region) >= red_min_pixels:
+                rejected += 1
+                continue
+            if any(
+                backend.recognize(image, template, region, label_threshold, deadline, should_stop).hit
+                for template in label_templates
+            ):
                 rejected += 1
                 continue
             if best is None or score > best[0]:
@@ -92,7 +113,7 @@ def find_bubble(
         score=best[0] if best else None,
         verified_matchers=len(matchers),
         invasion_rejected=rejected,
-        exclusion_verified=label is not None,
+        exclusion_verified=label_verified and bool(label_templates),
     )
 
 
@@ -259,8 +280,10 @@ def run_fief_industry(
         while True:
             cls_after = screenshot()
             page_id = page_id_of(cls_after)
+            # 半显示奖励、尚未变化的主城、以及点击后的白光/镜头平移等未知过渡帧都只读等待。
             waiting = not cls_after.blockers and (
-                _partial_reward(cls_after) or (page_id == "main_city" and not cls_after.ambiguous_pages)
+                _partial_reward(cls_after)
+                or (page_id in {"main_city", None} and not cls_after.ambiguous_pages)
             )
             if waiting and time.monotonic() < end_of_window:
                 log("verify", "claim_reward_transition_pending", {"page_id": page_id})

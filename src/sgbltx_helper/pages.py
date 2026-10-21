@@ -30,14 +30,20 @@ class Matcher:
     threshold: float = 0.85
     roi: tuple[int, int, int, int] = (0, 0, 0, 0)
     verified: bool = False
+    # 归一化模板匹配不受整体变暗影响；需要排除遮罩（弹窗、菜单）下的同一界面时，
+    # 规定命中区域的最低平均亮度。默认不检查。
+    min_mean: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "template": self.template,
             "threshold": self.threshold,
             "roi": list(self.roi),
             "verified": self.verified,
         }
+        if self.min_mean is not None:
+            data["min_mean"] = self.min_mean
+        return data
 
 
 @dataclass(frozen=True)
@@ -122,11 +128,15 @@ def _parse_matcher(raw: Any, where: str) -> Matcher:
     roi_raw = raw.get("roi") or [0, 0, 0, 0]
     if not isinstance(roi_raw, (list, tuple)) or len(roi_raw) != 4:
         raise ContractError(f"{where}.roi 必须是 [x, y, w, h]")
+    min_mean = raw.get("min_mean")
+    if min_mean is not None and (isinstance(min_mean, bool) or not isinstance(min_mean, (int, float))):
+        raise ContractError(f"{where}.min_mean 必须是数字")
     return Matcher(
         template=template,
         threshold=float(raw.get("threshold", 0.85)),
         roi=(int(roi_raw[0]), int(roi_raw[1]), int(roi_raw[2]), int(roi_raw[3])),
         verified=bool(raw.get("verified", False)),
+        min_mean=float(min_mean) if min_mean is not None else None,
     )
 
 

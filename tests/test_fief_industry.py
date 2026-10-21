@@ -48,30 +48,29 @@ def _config() -> dict:
 
 def test_resource_pack_loads_and_bubbles_await_live_sample(fief_backend: MaaBackend) -> None:
     config = _config()
-    assert config["resource_bubbles"] == []
+    assert [raw["template"] for raw in config["resource_bubbles"]] == ["fief_bubble_grain.png", "fief_bubble_coin.png"]
+    assert all(raw["verified"] for raw in config["resource_bubbles"])
     assert config["max_reward_popups"] == 4
-    assert config["controls"]["reward_close"]["verified"] is False
+    assert config["controls"]["reward_close"]["verified"] is True
     catalog = load_page_catalog(RESOURCE / "pages.json")
-    assert catalog.by_id("reward_popup").verified is False
+    assert catalog.by_id("reward_popup").verified is True
     assert catalog.by_id("main_city").verified is True
     assert {page.page_id for page in catalog.blockers} >= {
         "account_conflict", "unrelated_announcement", "unrelated_announcement_defense",
     }
 
 
-def test_invasion_label_hits_real_invasion_marker_only(fief_backend: MaaBackend) -> None:
+@pytest.mark.parametrize("fixture", ["fief_invasion_marker_roi.png", "fief_invasion_marker_upright_roi.png"])
+def test_invasion_label_hits_real_invasion_marker_only(fief_backend: MaaBackend, fixture: str) -> None:
     label = _config()["invasion_label"]
-    invasion = _bgr_canvas(FIXTURES / "fief_invasion_marker_roi.png", INVASION_MARKER_ORIGIN)
-    outcome = fief_backend.recognize(
-        invasion, label["template"], _offset_roi(INVASION_MARKER_CENTER, label["offset_roi"]), label["threshold"],
-    )
-    assert outcome.hit, f"入侵字样未命中, score={outcome.score}"
+    invasion = _bgr_canvas(FIXTURES / fixture, INVASION_MARKER_ORIGIN)
+    region = _offset_roi(INVASION_MARKER_CENTER, label["offset_roi"])
+    scores = [fief_backend.recognize(invasion, t, region, label["threshold"]).score for t in label["templates"]]
+    assert max(scores) >= label["threshold"], f"入侵字样未命中, scores={scores}"
 
     scroll = _bgr_canvas(FIXTURES / "fief_scroll_marker_roi.png", SCROLL_MARKER_ORIGIN)
-    outcome = fief_backend.recognize(
-        scroll, label["template"], _offset_roi(SCROLL_MARKER_CENTER, label["offset_roi"]), label["threshold"],
-    )
-    assert not outcome.hit
+    region = _offset_roi(SCROLL_MARKER_CENTER, label["offset_roi"])
+    assert not any(fief_backend.recognize(scroll, t, region, label["threshold"]).hit for t in label["templates"])
 
 
 # ---------------------------------------------------------------- 状态机（FakeBackend）
@@ -350,11 +349,98 @@ _VERIFIED_BUBBLES = [raw["template"] for raw in json.loads(
 
 @pytest.mark.skipif(not _VERIFIED_BUBBLES, reason="资源气泡素材尚未实机采样；验证后此门禁自动生效")
 @pytest.mark.parametrize(("fixture", "origin"), [
-    ("fief_invasion_marker_roi.png", INVASION_MARKER_ORIGIN),
+    ("fief_invasion_marker_roi.png", INVASION_MARKER_ORIGIN),          # 入侵标记摆动中的倾斜姿态
+    ("fief_invasion_marker_upright_roi.png", INVASION_MARKER_ORIGIN),  # 入侵标记正立姿态（铜钱图标与资源气泡几乎相同）
     ("fief_scroll_marker_roi.png", SCROLL_MARKER_ORIGIN),
+    ("fief_bubble_grain_covered_roi.png", (560, 400)),                 # 被“跨服赛报名”图标压住的粮食气泡
 ])
 def test_verified_bubbles_never_select_non_resource_markers(fief_backend, fixture, origin) -> None:
     from sgbltx_helper.fief_industry import find_bubble
 
     scan = find_bubble(fief_backend, _bgr_canvas(FIXTURES / fixture, origin), _config())
     assert scan.candidate is None
+
+
+@pytest.mark.parametrize(("fixture", "origin", "expected"), [
+    ("fief_bubble_grain_roi.png", (250, 1200), (324, 1279)),
+    ("fief_bubble_coin_roi.png", (790, 540), (862, 611)),
+])
+def test_verified_bubbles_find_real_resource_bubbles(fief_backend, fixture, origin, expected) -> None:
+    from sgbltx_helper.fief_industry import find_bubble
+
+    scan = find_bubble(fief_backend, _bgr_canvas(FIXTURES / fixture, origin), _config())
+    assert scan.candidate == expected
+    assert scan.invasion_rejected == 0
+
+
+@pytest.mark.parametrize("angle", [-8, -6, -4, 4, 6, 8])
+def test_swaying_invasion_marker_is_rejected_at_unsampled_angles(fief_backend, angle) -> None:
+    """入侵标记有摆动动画；未采样到的倾斜角度也必须被排除，不能退化为可点气泡。"""
+    from sgbltx_helper.fief_industry import find_bubble
+
+    canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+    canvas.paste(Image.open(FIXTURES / "fief_invasion_marker_upright_roi.png").convert("RGB"), INVASION_MARKER_ORIGIN)
+    banner = canvas.crop((270, 752, 372, 785))
+    canvas.paste(banner.rotate(angle, resample=Image.BICUBIC, fillcolor=(0, 0, 0)), (270, 752))
+    image = np.ascontiguousarray(np.asarray(canvas)[:, :, ::-1])
+    scan = find_bubble(fief_backend, image, _config())
+    assert scan.candidate is None
+    assert scan.invasion_rejected >= 1
+
+
+def _popup_canvas(fixture: str) -> np.ndarray:
+    return _bgr_canvas(FIXTURES / fixture, (0, 640))
+
+
+def test_real_fief_reward_popup_is_identified_and_closable(fief_backend) -> None:
+    from sgbltx_helper.classification import classify
+
+    image = _popup_canvas("fief_reward_popup_roi.png")
+    cls = classify(fief_backend, image, load_page_catalog(RESOURCE / "pages.json"))
+    assert cls.page is not None and cls.page.page_id == "reward_popup"
+    close = _config()["controls"]["reward_close"]
+    outcome = fief_backend.recognize(image, close["template"], tuple(close["roi"]), close["threshold"])
+    assert outcome.hit and outcome.center is not None
+    assert 435 <= outcome.center[0] <= 645 and 1116 <= outcome.center[1] <= 1139
+
+
+def test_animating_fief_reward_popup_is_partial_foreground(fief_backend) -> None:
+    from sgbltx_helper.classification import classify
+    from sgbltx_helper.fief_industry import _partial_reward
+
+    cls = classify(fief_backend, _popup_canvas("fief_reward_popup_animating_roi.png"), load_page_catalog(RESOURCE / "pages.json"))
+    assert cls.page is None
+    assert _partial_reward(cls)
+
+
+def test_main_city_identity_survives_camera_pan_after_collect(fief_backend) -> None:
+    """点气泡后镜头移到该产业并停留；主城身份只能依赖固定界面（顶部资源栏 + 左下“任务”入口）。"""
+    from sgbltx_helper.classification import classify
+
+    canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+    canvas.paste(Image.open(FIXTURES / "fief_panned_city_hud_roi.png").convert("RGB"), (300, 100))
+    canvas.paste(Image.open(FIXTURES / "fief_panned_city_task_roi.png").convert("RGB"), (80, 1540))
+    image = np.ascontiguousarray(np.asarray(canvas)[:, :, ::-1])
+    cls = classify(fief_backend, image, load_page_catalog(RESOURCE / "pages.json"))
+    assert cls.page is not None and cls.page.page_id == "main_city"
+    assert not cls.blockers and not cls.ambiguous_pages
+
+
+def test_unknown_flash_frame_after_claim_is_waited_out(tmp_path):
+    backend = FakeBackend(script=[CITY_BUBBLE, CITY_BUBBLE, {}, {}, POPUP, CITY])
+    result = _run_fief(_make_fief_project(tmp_path, wait=1.0), backend)
+    assert result.status is RunStatus.COMPLETED, result.detail["message"]
+    assert _clicks(backend) == 2
+
+
+@pytest.mark.parametrize("tag", ["weidi", "moremenu"])
+def test_dimmed_hud_under_overlay_is_not_main_city(fief_backend, tag) -> None:
+    """归一化模板匹配不受整体变暗影响；未登记公告（如魏帝）或“更多”菜单遮罩下的界面不能当作主城。"""
+    from sgbltx_helper.classification import classify
+
+    canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+    canvas.paste(Image.open(FIXTURES / f"fief_dimmed_{tag}_hud_roi.png").convert("RGB"), (300, 100))
+    canvas.paste(Image.open(FIXTURES / f"fief_dimmed_{tag}_task_roi.png").convert("RGB"), (80, 1540))
+    image = np.ascontiguousarray(np.asarray(canvas)[:, :, ::-1])
+    cls = classify(fief_backend, image, load_page_catalog(RESOURCE / "pages.json"))
+    assert cls.page is None or cls.page.page_id != "main_city"

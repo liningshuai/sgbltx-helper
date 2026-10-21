@@ -13,9 +13,9 @@
   "entry_node": "FiefIndustryNoInput",
   "target_page_id": "main_city",
   "notes": [
-    "主城、顶号与两个军令公告身份照抄 resource/daily_rewards/pages.json（已实机验证）。",
-    "reward_popup 复用邮件奖励弹窗素材，产业场景尚无实机样本，页面与身份均为未验证。",
-    "资源气泡素材待首次实机采样；负样本来自 dryrun-20261021T070159Z-39596（入侵标记、农田卷轴标记）。"
+    "资源气泡素材待首次实机采样；负样本来自 dryrun-20261021T070159Z-39596（入侵标记、农田卷轴标记）。",
+    "reward_popup 已用 2026-10-21 实机产业奖励弹窗验证：标题复用邮件素材；关闭提示改为产业专用的紧贴文字裁剪（邮件提示含窗口背景，产业场景仅 0.948）。",
+    "顶号与两个军令公告身份照抄 resource/daily_rewards/pages.json（已实机验证）。主城身份改为固定界面 AND：2026-10-21 实机点击气泡后镜头平移，城墙标记失配（run-20261021T080213Z-32000/after.png）。"
   ],
   "pages": [
     {
@@ -103,7 +103,7 @@
     {
       "page_id": "main_city",
       "role": "entry",
-      "description": "主城固定资源 HUD 与可见城墙局部同时命中",
+      "description": "封地主城场景：顶部资源栏铜币 + 左下“任务”入口文字，均为固定界面，与地图镜头位置无关。点击产业气泡后镜头会移到该产业并停留，因此不使用城墙等地图元素。 两项均要求命中区域平均亮度≥60：实机主城为 89.6/87.8，魏帝公告、“更多”菜单与奖励弹窗遮罩下均为 27.0/26.5。",
       "verified": true,
       "identity": [
         {
@@ -115,26 +115,28 @@
             100
           ],
           "threshold": 0.97,
-          "verified": true
+          "verified": true,
+          "min_mean": 60
         },
         {
-          "template": "main_city_wall_marker.png",
+          "template": "daily_task_entry_label.png",
           "roi": [
-            440,
-            850,
-            360,
-            420
+            80,
+            1540,
+            200,
+            180
           ],
           "threshold": 0.97,
-          "verified": true
+          "verified": true,
+          "min_mean": 60
         }
       ]
     },
     {
       "page_id": "reward_popup",
       "role": "target",
-      "description": "产业奖励弹窗：复用邮件‘获得奖励’标题与‘点击任意区域关闭’提示；待产业实机样本验证前不授权关闭。",
-      "verified": false,
+      "description": "产业奖励弹窗：‘获得奖励’标题（复用邮件素材，产业实机得分 0.995）与‘点击任意区域关闭’紧贴文字的产业专用提示同时命中。来源 dryrun-20261021T075940Z-42720；动画中的 run-20261021T075852Z-23644/after.png 只命中提示，按半显示前景只读等待。",
+      "verified": true,
       "identity": [
         {
           "template": "fief_reward_title.png",
@@ -145,7 +147,7 @@
             360,
             120
           ],
-          "verified": false
+          "verified": true
         },
         {
           "template": "fief_reward_dismiss_hint.png",
@@ -156,7 +158,7 @@
             420,
             110
           ],
-          "verified": false
+          "verified": true
         }
       ],
       "claimable": [],

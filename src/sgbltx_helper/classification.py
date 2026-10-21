@@ -48,10 +48,15 @@ def _evaluate(
     deadline: float | None = None, should_stop: Callable[[], bool] | None = None,
 ) -> Observation:
     outcome = backend.recognize(image, matcher.template, matcher.roi, matcher.threshold, deadline, should_stop)
+    hit = bool(outcome.hit)
+    if hit and matcher.min_mean is not None and outcome.box is not None:
+        x, y, w, h = outcome.box
+        region = image[max(0, y):y + h, max(0, x):x + w]
+        hit = region.size > 0 and float(region.mean()) >= matcher.min_mean
     return Observation(
         name=f"{page_id}:{kind}:{matcher.template}",
         kind=kind,
-        hit=bool(outcome.hit),
+        hit=hit,
         score=outcome.score,
         box=outcome.box,
     )

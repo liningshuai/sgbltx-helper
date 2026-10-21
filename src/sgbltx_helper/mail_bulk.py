@@ -13,7 +13,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from .classification import Classification, classify
+from .classification import Classification, blocker_message, blocker_notes, blocker_reason, classify
 from .contracts import (
     CandidateAction, InspectionResult, ReasonCode, RunMode, RunStatus, TaskRequest, TaskResult,
 )
@@ -257,7 +257,7 @@ def run_mail_bulk(
             device_serial=request.profile.serial, observed_at=utc_now_iso(), page_id=current.page_id,
             observations=list(cls.observations) + list(cls.claimable) + list(cls.already_claimed),
             candidate_actions=[candidate] if candidate else [],
-            blockers=[f"命中阻断页 {current.blocker}"] if current.blocker else [],
+            blockers=blocker_notes(cls),
             evidence_paths=[str(before_path), str(workspace.events_path), str(workspace.inspection_path)],
             notes=["批量邮件 dry-run 只分析当前画面；没有导航、领取或关闭输入。"],
         )
@@ -431,13 +431,12 @@ def run_mail_bulk(
                 wait_for_claim_transition=wait_for_claim_transition,
                 wait_for_reward_change_from=wait_for_reward_change_from,
             )
-            _, observed, _ = outcome
+            observed_cls, observed, _ = outcome
             # 阻断提示可与背景页面同时命中，不能仅凭背景主城确认终态。
             if observed.blocker or observed.ambiguous:
                 return finish(
-                    RunStatus.NEEDS_ATTENTION,
-                    ReasonCode.ACCOUNT_CONFLICT if observed.blocker else ReasonCode.UNKNOWN_PAGE,
-                    "动作后出现阻断提示或页面身份仍不完整；不授权后续输入或收尾成功",
+                    RunStatus.NEEDS_ATTENTION, blocker_reason(observed_cls),
+                    blocker_message(observed_cls, "动作后出现阻断提示或页面身份仍不完整；不授权后续输入或收尾成功"),
                 )
             return outcome
         except MaaStopUnconfirmed as exc:
@@ -464,9 +463,8 @@ def run_mail_bulk(
             if current.page_id == "mail_inbox":
                 step = "close_mail"
         if step in {"stop_blocker", "stop_unknown"}:
-            return finish(RunStatus.NEEDS_ATTENTION,
-                          ReasonCode.ACCOUNT_CONFLICT if current.blocker else ReasonCode.UNKNOWN_PAGE,
-                          f"当前页面不可安全继续：{step}")
+            return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(page_cls),
+                          blocker_message(page_cls, f"当前页面不可安全继续：{step}"))
         if step == "stop_uncertain":
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.OUTCOME_UNCERTAIN,
                           "已提交批量请求或列表状态不足以证明无奖励；不会再次点击一键阅读")

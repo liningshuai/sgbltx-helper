@@ -9,7 +9,7 @@ from typing import Any
 
 import numpy as np
 
-from .classification import Classification, classify
+from .classification import Classification, blocker_message, blocker_notes, blocker_reason, classify
 from .contracts import (
     CandidateAction, InspectionResult, ReasonCode, RunMode, RunStatus, TaskRequest, TaskResult,
 )
@@ -252,7 +252,7 @@ def run_daily_rewards(
                 verified=ready,
                 blocked_reason=None if ready else "需要日常页身份明确，且顶部一键领取绿色控件当帧命中、灰色控件未命中",
             ))
-        blockers = [f"命中阻断页 {item.page_id}" for item in cls.blockers]
+        blockers = blocker_notes(cls)
         if cls.ambiguous_pages:
             blockers.append(f"页面身份不唯一：{', '.join(cls.ambiguous_pages)}")
         if cls.page is None and not blockers:
@@ -611,17 +611,14 @@ def run_daily_rewards(
                 if not dismiss_known_announcement():
                     if last_result is not None:
                         return last_result
-                    page = cls.blockers[0]
-                    reason = ReasonCode(page.reason_code) if page.reason_code in ReasonCode._value2member_map_ else ReasonCode.UNKNOWN_PAGE
-                    return finish(RunStatus.NEEDS_ATTENTION, reason,
-                                  "公告空白区点按后阻断画面仍在或无法确认；停止后续输入")
+                    return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls),
+                                  blocker_message(cls, "公告空白区点按后阻断画面仍在或无法确认；停止后续输入"))
                 if cls.ambiguous_pages or cls.page is None or cls.page.page_id != expected_page:
                     return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE,
                                   "公告关闭后页面未通过新鲜识别；停止后续输入")
             else:
-                page = cls.blockers[0]
-                reason = ReasonCode(page.reason_code) if page.reason_code in ReasonCode._value2member_map_ else ReasonCode.UNKNOWN_PAGE
-                return finish(RunStatus.NEEDS_ATTENTION, reason, "导航后识别到阻断页；停止所有输入")
+                return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls),
+                              blocker_message(cls, "导航后识别到阻断页；停止所有输入"))
         if cls.ambiguous_pages or cls.page is None:
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE,
                           "导航后页面未知或有歧义；已保存新鲜截图并停止")
@@ -634,18 +631,14 @@ def run_daily_rewards(
             if not dismiss_known_announcement():
                 if last_result is not None:
                     return last_result
-                page = cls.blockers[0]
-                reason = ReasonCode(page.reason_code) if page.reason_code in ReasonCode._value2member_map_ else ReasonCode.UNKNOWN_PAGE
-                return finish(RunStatus.NEEDS_ATTENTION, reason,
-                              "攻城令公告未能通过已验证空白区安全关闭；未继续任务")
+                return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls),
+                              blocker_message(cls, "攻城令公告未能通过已验证空白区安全关闭；未继续任务"))
         else:
-            page = cls.blockers[0]
-            reason = ReasonCode(page.reason_code) if page.reason_code in ReasonCode._value2member_map_ else ReasonCode.UNKNOWN_PAGE
-            return finish(RunStatus.NEEDS_ATTENTION, reason, "命中阻断页；未继续输入")
+            return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls),
+                          blocker_message(cls, "命中阻断页；未继续输入"))
     if cls.blockers:
-        page = cls.blockers[0]
-        reason = ReasonCode(page.reason_code) if page.reason_code in ReasonCode._value2member_map_ else ReasonCode.UNKNOWN_PAGE
-        return finish(RunStatus.NEEDS_ATTENTION, reason, "空白区点按后公告仍可见；只允许一次尝试")
+        return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls),
+                      blocker_message(cls, "空白区点按后公告仍可见；只允许一次尝试"))
     if cls.ambiguous_pages or cls.page is None:
         return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE,
                       "页面身份未知或有歧义；未继续输入")

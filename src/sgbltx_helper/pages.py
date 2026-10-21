@@ -67,6 +67,8 @@ class PageSpec:
     page_id: str
     role: str = PAGE_ROLE_TARGET
     reason_code: str | None = None
+    # 阻断页给用户看的原因与人工处理方法，例如“网络异常：请重启游戏后重新登录”
+    message: str = ""
     description: str = ""
     verified: bool = False
     identity: list[Matcher] = field(default_factory=list)
@@ -164,6 +166,7 @@ def load_page_catalog(path: Path) -> PageCatalog:
             page_id=page_id,
             role=str(item.get("role") or PAGE_ROLE_TARGET),
             reason_code=item.get("reason_code"),
+            message=str(item.get("message") or ""),
             description=str(item.get("description") or ""),
             verified=bool(item.get("verified", False)),
             identity=[_parse_matcher(m, f"pages[{page_id}].identity") for m in item.get("identity") or []],

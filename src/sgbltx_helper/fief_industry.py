@@ -13,7 +13,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from .classification import Classification, classify
+from .classification import Classification, blocker_message, blocker_notes, blocker_reason, classify
 from .contracts import (
     CandidateAction, InspectionResult, ReasonCode, RunMode, RunStatus, TaskRequest, TaskResult,
 )
@@ -115,11 +115,6 @@ def find_bubble(
         invasion_rejected=rejected,
         exclusion_verified=label_verified and bool(label_templates),
     )
-
-
-def _blocker_reason(cls: Classification) -> ReasonCode:
-    code = cls.blockers[0].reason_code if cls.blockers else None
-    return ReasonCode.ACCOUNT_CONFLICT if code == "account_conflict" else ReasonCode.UNKNOWN_PAGE
 
 
 def _partial_reward(cls: Classification) -> bool:
@@ -369,7 +364,7 @@ def run_fief_industry(
             run_id=run_id, task_id=request.task_id, account_alias=request.profile.account_alias,
             device_serial=request.profile.serial, observed_at=utc_now_iso(), page_id=final_page_id,
             observations=list(cls.observations), candidate_actions=candidates,
-            blockers=[f"命中阻断页 {p.page_id}" for p in cls.blockers],
+            blockers=blocker_notes(cls),
             evidence_paths=[str(before_path), str(workspace.events_path), str(workspace.inspection_path)],
             notes=notes,
         )
@@ -378,7 +373,7 @@ def run_fief_industry(
         return inspection
 
     if cls.blockers:
-        return finish(RunStatus.NEEDS_ATTENTION, _blocker_reason(cls), "当前画面有阻断提示；未发出输入")
+        return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls), blocker_message(cls, "当前画面有阻断提示；未发出输入"))
     if cls.ambiguous_pages or final_page_id not in {"main_city", "reward_popup"}:
         return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE, "页面身份未知或有歧义；未发出输入")
 
@@ -397,7 +392,8 @@ def run_fief_industry(
         if isinstance(fresh, TaskResult):
             return fresh
         if fresh.blockers:
-            return finish(RunStatus.NEEDS_ATTENTION, _blocker_reason(fresh), "点击前新鲜画面出现阻断提示；未发出输入")
+            return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(fresh),
+                          blocker_message(fresh, "点击前新鲜画面出现阻断提示；未发出输入"))
         if fresh.ambiguous_pages or page_id_of(fresh) != "main_city":
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.UNKNOWN_PAGE, "点击前新鲜画面不再是主城；未发出输入")
         fresh_scan = guarded(lambda: find_bubble(backend, current_image, config, deadline, stop.should_stop))
@@ -424,7 +420,7 @@ def run_fief_industry(
             return outcome
         cls = outcome
         if cls.blockers:
-            return finish(RunStatus.NEEDS_ATTENTION, _blocker_reason(cls), "领取后出现阻断提示；不再输入")
+            return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls), blocker_message(cls, "领取后出现阻断提示；不再输入"))
         if page_id_of(cls) != "reward_popup":
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.OUTCOME_UNCERTAIN,
                           "点击气泡后未出现产业奖励弹窗；不能确认领取，不会重试")
@@ -476,7 +472,7 @@ def run_fief_industry(
             return outcome
         cls, exit_seen = outcome
         if cls.blockers:
-            return finish(RunStatus.NEEDS_ATTENTION, _blocker_reason(cls), "关闭奖励后出现阻断提示；不再输入")
+            return finish(RunStatus.NEEDS_ATTENTION, blocker_reason(cls), blocker_message(cls, "关闭奖励后出现阻断提示；不再输入"))
         if page_id_of(cls) == "reward_popup" and not exit_seen:
             return finish(RunStatus.NEEDS_ATTENTION, ReasonCode.POSTCONDITION_NOT_MET,
                           "关闭后仍是同一奖励画面；无法确认出现了下一张弹窗，不重复点击")

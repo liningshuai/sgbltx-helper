@@ -12,7 +12,7 @@ from typing import Callable
 
 import numpy as np
 
-from .contracts import Observation
+from .contracts import Observation, ReasonCode
 from .maa_adapter import Backend
 from .pages import Matcher, PageCatalog, PageSpec
 
@@ -141,3 +141,23 @@ def classify(
             )
 
     return result
+
+
+def blocker_reason(cls: Classification) -> ReasonCode:
+    """首个阻断页登记的原因码；没有阻断页或原因码不认识时按未知页处理。"""
+    code = cls.blockers[0].reason_code if cls.blockers else None
+    try:
+        return ReasonCode(code) if code else ReasonCode.UNKNOWN_PAGE
+    except ValueError:
+        return ReasonCode.UNKNOWN_PAGE
+
+
+def blocker_message(cls: Classification, context: str) -> str:
+    """阻断页登记了原因与人工处理方法时放在最前，任务上下文附在括号里。"""
+    message = cls.blockers[0].message if cls.blockers else ""
+    return f"{message}（{context}）" if message else context
+
+
+def blocker_notes(cls: Classification) -> list[str]:
+    """dry-run 的阻断说明：页面 ID 加上登记的人工处理方法。"""
+    return [f"命中阻断页 {page.page_id}" + (f"：{page.message}" if page.message else "") for page in cls.blockers]

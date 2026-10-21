@@ -15,7 +15,8 @@
   "notes": [
     "资源气泡素材待首次实机采样；负样本来自 dryrun-20261021T070159Z-39596（入侵标记、农田卷轴标记）。",
     "reward_popup 已用 2026-10-21 实机产业奖励弹窗验证：标题复用邮件素材；关闭提示改为产业专用的紧贴文字裁剪（邮件提示含窗口背景，产业场景仅 0.948）。",
-    "顶号与两个军令公告身份照抄 resource/daily_rewards/pages.json（已实机验证）。主城身份改为固定界面 AND：2026-10-21 实机点击气泡后镜头平移，城墙标记失配（run-20261021T080213Z-32000/after.png）。"
+    "顶号与两个军令公告身份照抄 resource/daily_rewards/pages.json（已实机验证）。主城身份改为固定界面 AND：2026-10-21 实机点击气泡后镜头平移，城墙标记失配（run-20261021T080213Z-32000/after.png）。",
+    "随机提示阻断（2026-10-21）：网络异常提示取自 run-20261021T081047Z-8320，魏帝当选公告取自 run-20261020T064958Z-328756，三个资源包共用同一组模板。命中即零输入停止，结果写明人工处理方法；没有按主城校准的空白目标，不点“确定”或空白处。"
   ],
   "pages": [
     {
@@ -97,6 +98,60 @@
           ],
           "threshold": 0.97,
           "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "network_error",
+      "role": "blocker",
+      "reason_code": "network_error",
+      "message": "网络异常：请重启游戏后重新登录",
+      "description": "“提示 / 网络有异常,请稍等片刻 / 确定”弹窗：标题与正文同时命中即停止。需要用户重启游戏并手动登录；绝不点“确定”或空白处。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "page_network_error_title.png",
+          "roi": [
+            440,
+            810,
+            200,
+            120
+          ],
+          "threshold": 0.97,
+          "verified": true
+        },
+        {
+          "template": "page_network_error_text.png",
+          "roi": [
+            150,
+            940,
+            780,
+            110
+          ],
+          "threshold": 0.97,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "page_id": "weidi_announcement",
+      "role": "blocker",
+      "reason_code": "announcement",
+      "message": "魏帝公告：请手动关闭",
+      "description": "“魏帝”当选公告（点击任意区域关闭）：只认不含玩家名的标题框。没有按主城校准的空白关闭目标，只停止、不点击。亮度下限排除压在其他弹窗下变暗的同一公告（前景 47.7/44.9，重复登录遮罩下 13.5）。",
+      "verified": true,
+      "identity": [
+        {
+          "template": "page_weidi_announcement_title.png",
+          "roi": [
+            360,
+            620,
+            360,
+            150
+          ],
+          "threshold": 0.97,
+          "verified": true,
+          "min_mean": 30
         }
       ]
     },

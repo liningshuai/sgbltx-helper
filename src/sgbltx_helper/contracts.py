@@ -65,6 +65,8 @@ class ReasonCode(StrEnum):
     LOGIN_PAGE = "login_page"
     ACCOUNT_CONFLICT = "account_conflict"
     CAPTCHA = "captcha"
+    NETWORK_ERROR = "network_error"
+    ANNOUNCEMENT = "announcement"
     CLAIM_TARGET_ABSENT = "claim_target_absent"
 
     # 结果判定

@@ -826,6 +826,40 @@ def test_known_announcement_persistent_after_one_blank_attempt_is_not_reclicked(
     assert len(backend.input_calls) == 1
 
 
+_NETWORK_NOTICE = {"page_network_error_title.png": True, "page_network_error_text.png": True}
+
+
+def test_registered_notice_over_daily_page_is_never_dismissed_at_the_blank_target(tmp_path: Path) -> None:
+    """空白关闭只为攻城令/守城令公告校准过；网络提示即使压在日常页上、空白目标可见，也只能停止。"""
+    project = _daily_project(tmp_path)
+    _short_daily_wait(project)
+    blocked = _daily_claim_state(available=True)
+    blocked.update(_NETWORK_NOTICE)
+    blocked["daily_announcement_dismiss_blank.png"] = True
+    backend = FakeBackend(script=[blocked, _daily_claim_state(available=False),
+                                  _daily_claim_state(available=False, home=True)])
+    result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
+    assert backend.input_calls == []
+    assert result.detail["announcement_dismiss_attempted"] is False
+    assert result.status is RunStatus.NEEDS_ATTENTION
+    assert result.reason_code.value == "network_error"
+    assert "网络异常：请重启游戏后重新登录" in result.detail["message"]
+
+
+def test_registered_notice_after_navigation_stops_with_its_reason_and_manual_fix(tmp_path: Path) -> None:
+    project = _daily_project(tmp_path)
+    _short_daily_wait(project)
+    backend = FakeBackend(script=[
+        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True, "daily_task_entry_label.png": True},
+        _NETWORK_NOTICE,
+    ])
+    result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
+    assert result.detail["navigation_action_count"] == 1
+    assert result.action_count == 1
+    assert result.reason_code.value == "network_error"
+    assert "网络异常：请重启游戏后重新登录" in result.detail["message"]
+
+
 def test_daily_one_click_closes_unknown_reward_and_returns_home(tmp_path: Path) -> None:
     project = _daily_project(tmp_path)
     config_path = project.resource_root / "daily_rewards" / "daily_rewards.json"

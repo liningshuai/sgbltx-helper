@@ -99,6 +99,8 @@ def _make_fief_project(tmp_path: Path, *, bubbles_verified: bool = True, popup_v
              "identity": [{"template": "conflict.png", "verified": True}]},
             {"page_id": "unrelated_announcement", "role": "blocker", "reason_code": "unknown_page", "verified": True,
              "identity": [{"template": "announce.png", "verified": True}]},
+            {"page_id": "network_error", "role": "blocker", "reason_code": "network_error", "verified": True,
+             "message": "网络异常：请重启游戏后重新登录", "identity": [{"template": "network.png", "verified": True}]},
             {"page_id": "main_city", "role": "entry", "verified": True,
              "identity": [{"template": "city.png", "verified": True}]},
             {"page_id": "reward_popup", "role": "target", "verified": popup_verified,
@@ -302,6 +304,23 @@ def test_claim_click_uses_fresh_frame_and_stops_on_new_announcement(tmp_path):
     assert backend.input_calls == []
     assert result.reason_code is ReasonCode.UNKNOWN_PAGE
     assert result.detail["claim_request_submitted"] is False
+
+
+def test_notice_on_fresh_frame_before_click_reports_its_manual_fix(tmp_path):
+    backend = FakeBackend(script=[CITY_BUBBLE, {**CITY_BUBBLE, "network.png": True}])
+    result = _run_fief(_make_fief_project(tmp_path), backend)
+    assert backend.input_calls == []
+    assert result.reason_code.value == "network_error"
+    assert "网络异常：请重启游戏后重新登录" in result.detail["message"]
+
+
+def test_notice_after_claim_reports_its_reason_and_manual_fix(tmp_path):
+    backend = FakeBackend(script=[CITY_BUBBLE, CITY_BUBBLE, {"network.png": True}])
+    result = _run_fief(_make_fief_project(tmp_path), backend)
+    assert result.detail["claim_action_count"] == 1
+    assert _clicks(backend) == 1
+    assert result.reason_code.value == "network_error"
+    assert "网络异常：请重启游戏后重新登录" in result.detail["message"]
 
 
 def test_partial_flicker_is_not_exit_evidence(tmp_path):

@@ -433,6 +433,32 @@ def test_bulk_account_conflict_never_navigates_or_claims(tmp_path):
     assert backend.input_calls == []
 
 
+def _with_network_blocker(project) -> None:
+    path = project.resource_root / "mail_bulk" / "pages.json"
+    pages = json.loads(path.read_text(encoding="utf-8"))
+    pages["pages"].insert(0, {
+        "page_id": "network_error", "role": "blocker", "reason_code": "network_error",
+        "message": "网络异常：请重启游戏后重新登录", "verified": True,
+        "identity": [{"template": "network.png", "verified": True}],
+    })
+    path.write_text(json.dumps(pages), encoding="utf-8")
+
+
+def test_bulk_blocker_after_navigation_reports_its_own_reason_and_manual_fix(tmp_path):
+    project = _make_bulk_project(tmp_path)
+    _with_network_blocker(project)
+    backend = FakeBackend(script=[
+        {"city.png": True, "more_button.png": True},
+        {"network.png": True, "more_page.png": True, "mail_button.png": True},
+    ])
+    result = _run_bulk(project, backend)
+    assert result.status is RunStatus.NEEDS_ATTENTION
+    assert result.reason_code.value == "network_error"
+    assert "网络异常：请重启游戏后重新登录" in result.detail["message"]
+    assert result.detail["navigation_action_count"] == 1
+    assert result.action_count == 1
+
+
 def test_preexisting_reward_popup_can_be_dismissed_but_is_not_claim_success(tmp_path):
     project = _make_bulk_project(tmp_path)
     backend = FakeBackend(script=[

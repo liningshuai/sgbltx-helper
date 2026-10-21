@@ -67,6 +67,36 @@ def test_task_entry_control_is_scoped_to_verified_home_and_saved_states(daily_ba
         assert classified.page is None or classified.page.page_id != "main_city"
 
 
+def test_task_entry_control_ignores_map_background_behind_icon(daily_backend: MaaBackend) -> None:
+    """任务图标外角露出的地图随视角变化（石路/草地），入口模板只能取图标盘内文字。"""
+    control = json.loads((RESOURCE / "daily_rewards.json").read_text(encoding="utf-8"))["controls"]["tasks_entry"]
+    x, y, w, h = control["roi"]
+
+    def canvas_with(patch: Image.Image, at: tuple[int, int]) -> np.ndarray:
+        canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+        canvas.paste(patch.convert("RGB"), at)
+        return _bgr_from_image(canvas)
+
+    # 2026-10-20 实机主城：图标外角为草地（ROI 裁剪样本，不含账号信息）
+    grass = Image.open(PROJECT / "tests" / "fixtures" / "daily_task_entry_grass_roi.png")
+    outcome = daily_backend.recognize(canvas_with(grass, (x, y)), control["template"], (x, y, w, h), control["threshold"])
+    assert outcome.hit, f"草地背景下任务入口未命中, score={outcome.score}"
+
+    # 2026-10 早期主城：图标外角为石路（原入口模板本身，贴回实机位置 118,1664）
+    stone = Image.open(PROJECT / "tests" / "fixtures" / "daily_task_entry_stone_label.png")
+    outcome = daily_backend.recognize(canvas_with(stone, (118, 1664)), control["template"], (x, y, w, h), control["threshold"])
+    assert outcome.hit, f"石路背景下任务入口未命中, score={outcome.score}"
+
+    # 空白 ROI 不得命中
+    blank = daily_backend.recognize(canvas_with(Image.new("RGB", (w, h)), (x, y)), control["template"], (x, y, w, h), control["threshold"])
+    assert not blank.hit
+
+
+def _bgr_from_image(image: Image.Image) -> np.ndarray:
+    rgb = np.asarray(image.convert("RGB"))
+    return np.ascontiguousarray(rgb[:, :, ::-1])
+
+
 def test_daily_task_hub_and_tab_control_use_real_page_sample(daily_backend: MaaBackend) -> None:
     config = json.loads((RESOURCE / "daily_rewards.json").read_text(encoding="utf-8"))
     catalog = load_page_catalog(RESOURCE / "pages.json")

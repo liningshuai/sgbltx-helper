@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 import conftest
-from conftest import FakeBackend
+from conftest import FakeBackend, snapshot_real_runs
 from sgbltx_helper.contracts import ConcurrentRunError, ReasonCode, RunMode, RunStatus
 from sgbltx_helper.locking import RunLock, StopUnconfirmedError, lock_file_name
 from sgbltx_helper.maa_adapter import MaaBackend, MaaError, MaaStopUnconfirmed, MaaStopped, ReadOnlyBackend, TaskRunSummary
@@ -604,6 +604,7 @@ class TestProcessMutex:
 # ------------------------------------------------------- CLI 契约
 class TestCliContract:
     def _run_cli(self, args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+        # cwd 即 CLI 默认项目根；必须是临时目录，否则 runner 的保留期清理会删除真实 artifacts/runs
         return subprocess.run(
             [sys.executable, "-m", "sgbltx_helper", *args],
             capture_output=True,
@@ -617,7 +618,7 @@ class TestCliContract:
     def test_run_without_mode_is_refused(self, tmp_path: Path) -> None:
         profile = tmp_path / "local.json"
         profile.write_text(json.dumps(_minimal_config()), encoding="utf-8")
-        proc = self._run_cli(["run", "--profile", str(profile)], PROJECT_ROOT)
+        proc = self._run_cli(["run", "--profile", str(profile)], tmp_path)
         assert proc.returncode == 4
         assert "--dry-run" in proc.stderr or "--execute" in proc.stderr
 
@@ -625,12 +626,12 @@ class TestCliContract:
         profile = tmp_path / "local.json"
         profile.write_text(json.dumps(_minimal_config()), encoding="utf-8")
         proc = self._run_cli(
-            ["run", "--profile", str(profile), "--dry-run", "--execute"], PROJECT_ROOT
+            ["run", "--profile", str(profile), "--dry-run", "--execute"], tmp_path
         )
         assert proc.returncode == 4
 
     def test_missing_profile_is_usage_error(self, tmp_path: Path) -> None:
-        proc = self._run_cli(["run", "--profile", str(tmp_path / "nope.json"), "--dry-run"], PROJECT_ROOT)
+        proc = self._run_cli(["run", "--profile", str(tmp_path / "nope.json"), "--dry-run"], tmp_path)
         assert proc.returncode == 4
         assert "不存在" in proc.stderr
 
@@ -640,13 +641,17 @@ class TestCliContract:
         cfg["profile"]["device"]["serial"] = ""
         profile = tmp_path / "local.json"
         profile.write_text(json.dumps(cfg), encoding="utf-8")
-        proc = self._run_cli(["run", "--profile", str(profile), "--dry-run"], PROJECT_ROOT)
+        real_runs_before = snapshot_real_runs()
+        proc = self._run_cli(["run", "--profile", str(profile), "--dry-run"], tmp_path)
         assert proc.returncode == 2
         # 有设备时应报 device_not_specified；无设备时 no_device 同样合格（都拒绝执行）
         assert "device_not_specified" in proc.stdout or "no_device" in proc.stdout
+        # 运行工件只能落在临时项目根；真实 runs 不得新增或被保留期清理
+        assert snapshot_real_runs() == real_runs_before
+        assert any((tmp_path / "artifacts" / "runs").iterdir())
 
-    def test_devices_command_lists_without_selecting(self) -> None:
-        proc = self._run_cli(["devices"], PROJECT_ROOT)
+    def test_devices_command_lists_without_selecting(self, tmp_path: Path) -> None:
+        proc = self._run_cli(["devices"], tmp_path)
         assert proc.returncode == 0
         assert "不会默认选择第一个设备" in proc.stdout
 

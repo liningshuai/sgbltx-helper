@@ -388,6 +388,21 @@ def run_mail_bulk(
                         raise MaaTimeout("等待奖励关闭后的画面过渡超过整轮截止时间")
                     continue
                 return cls_after, obs, items
+            if wait_for_claim_transition and partial_reward_transition and not obs.blocker:
+                # 一键阅读后的第一张奖励弹窗仍在动画中：只读等待，不授权任何输入。
+                remaining = min(end, deadline) - time.monotonic()
+                if remaining > 0:
+                    log("verify", "claim_reward_transition_pending", {
+                        "ambiguous_pages": list(cls_after.ambiguous_pages),
+                        "remaining_seconds": round(remaining, 3),
+                    })
+                    stop.wait(min(0.25, remaining))
+                    if stop.should_stop():
+                        raise MaaStopped("等待一键阅读奖励弹窗动画时收到停止请求")
+                    if time.monotonic() >= deadline:
+                        raise MaaTimeout("等待一键阅读奖励弹窗动画超过整轮截止时间")
+                    continue
+                return cls_after, obs, items
             if obs.blocker or obs.ambiguous or obs.page_id not in wait_page_ids:
                 # 其他未知页面不授权输入；已知页面可只读等待过渡。
                 if not obs.blocker and not obs.ambiguous and obs.page_id not in wait_page_ids and obs.page_id is not None and time.monotonic() < end:

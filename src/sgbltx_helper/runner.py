@@ -39,6 +39,7 @@ from .device import check_resolution, select_device
 from .evidence import RunWorkspace, cleanup_expired, make_run_id, utc_now_iso
 from .locking import RunLock, StopUnconfirmedError
 from .daily_rewards import run_daily_rewards
+from .fief_industry import run_fief_industry
 from .mail_bulk import run_mail_bulk
 from .maa_adapter import Backend, MaaError, MaaStopUnconfirmed, MaaStopped, MaaTimeout, ReadOnlyBackend, validate_pipeline_bundle
 from .pages import PageCatalog, load_page_catalog
@@ -271,6 +272,8 @@ def run(
         resource_root = resource_root / "mail_bulk"
     elif request.task_id == "daily_rewards_claim":
         resource_root = resource_root / "daily_rewards"
+    elif request.task_id == "fief_industry_collect":
+        resource_root = resource_root / "fief_industry"
     ws = RunWorkspace.create(artifacts_root, run_id)
     seq = 0
 
@@ -413,7 +416,7 @@ def run(
                 {"message": "页面规格声明的分辨率与档案不一致"},
             )
 
-        if request.task_id in {"mail_bulk_claim", "daily_rewards_claim"}:
+        if request.task_id in {"mail_bulk_claim", "daily_rewards_claim", "fief_industry_collect"}:
             try:
                 validate_pipeline_bundle(resource_root, request.task_id)
                 task_pipeline = load_pipeline(resource_root / "pipeline" / f"{request.task_id}.json")
@@ -492,6 +495,30 @@ def run(
                     started_at, 0, {"message": str(exc)},
                 )
             return run_daily_rewards(
+                request=request, backend=effective_backend, catalog=catalog, config=flow_config,
+                workspace=ws, run_id=run_id, started_at=started_at,
+                initial_image=image, before_path=before_path, seq=seq, deadline=deadline, stop=stop,
+            )
+
+        if request.task_id == "fief_industry_collect":
+            try:
+                flow_config = json.loads((resource_root / "fief_industry.json").read_text(encoding="utf-8"))
+                if not isinstance(flow_config, dict):
+                    raise ContractError("fief_industry.json 根节点必须是对象")
+                popups = flow_config.get("max_reward_popups")
+                if type(popups) is not int or not 1 <= popups <= 10:
+                    raise ContractError("max_reward_popups 必须是 1 到 10 的整数")
+                wait_seconds = flow_config.get("transition_wait_seconds")
+                if (isinstance(wait_seconds, bool) or not isinstance(wait_seconds, (int, float))
+                        or not 0 < wait_seconds <= min(30, request.timeout_seconds)):
+                    raise ContractError("transition_wait_seconds 必须是大于 0 且不超过整轮超时/30 秒的数字")
+            except (OSError, UnicodeError, json.JSONDecodeError, ContractError) as exc:
+                _log(ws, seq, "resource", "fief_industry_config_invalid", {"message": str(exc)})
+                return _result(
+                    ws, request, run_id, RunStatus.FAILED, ReasonCode.PROFILE_INVALID,
+                    started_at, 0, {"message": str(exc)},
+                )
+            return run_fief_industry(
                 request=request, backend=effective_backend, catalog=catalog, config=flow_config,
                 workspace=ws, run_id=run_id, started_at=started_at,
                 initial_image=image, before_path=before_path, seq=seq, deadline=deadline, stop=stop,

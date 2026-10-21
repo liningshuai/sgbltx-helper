@@ -64,7 +64,7 @@ def test_registry_exposes_tasks_and_two_fixed_profiles(tmp_path):
     assert next(task for task in tasks if task["task_id"] == "daily_rewards_claim")["enabled_by_default"] is False
     fief = next(task for task in tasks if task["task_id"] == "fief_industry_collect")
     assert fief["enabled_by_default"] is False
-    assert "待首次实机采样" in fief["acceptance"]
+    assert fief["acceptance"].startswith("已验收")
 
     profiles = list_profiles(tmp_path)
     assert {profile["profile_id"] for profile in profiles} == {"local-main", "local-test-mail"}

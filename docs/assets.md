@@ -129,3 +129,10 @@
 测试只用不含账号名和玩家名的 ROI 裁剪：`tests/fixtures/notice_network_error_title_roi.png`、`notice_network_error_text_roi.png`（网络提示来源图）、`notice_weidi_title_roi.png`（`raw_main_city` 中的公告，用来验证跨样本命中）、`notice_weidi_title_dimmed_roi.png`（`raw_conflict` 中被遮暗的公告，和已有的 `page_account_conflict_dialog.png` 取自同一张图）。`tests/test_notice_blockers.py` 用真实 MaaFw 识别这些画面，并驱动三个任务的 execute 和 dry-run。
 
 限制：三张网络提示的镜头位置相同；半透明弹窗换了背景后的稳定性，只由重复登录弹窗上的“提示”标题（`0.9992`）间接验证。多行正文、其他国家的帝位公告等变体尚未采样，遇到时仍按未知页停止。
+
+
+## 2026-10-21 主城身份与邮件素材修正
+
+- 邮件、日常两包的主城身份改为与封地包相同的固定界面 AND：`main_city_resource_coin.png` + `daily_task_entry_label.png`（ROI `[80,1540,200,180]`），两项 `min_mean: 60`。真实截图回放：两包均把主城（默认镜头与平移后）判为 `main_city`，更多菜单、邮件列表、日常页、网络异常与魏帝公告均不误判。
+- `resource/mail_bulk/image/mail_menu_entry_lower.png`：裁自 `dryrun-20261021T104513Z-44100/before.png` `[855,745,160,150]`（信封下半部与“邮件”文字，避开右上未读红点），身份与点击 ROI `[805,660,270,280]`。有红点的新菜单 1.000、无红点旧菜单 0.9989，其他截图均 <0.85。
+- 邮件奖励物品 ROI 统一为整条奖励横幅 `[60,780,960,340]`。四件奖励弹窗 `run-20261021T104652Z-29824/step-0010.png`：黄金 0.990、竞技币 0.984 命中；银两 0.949、粮草 0.898（数量文字不同）不命中。

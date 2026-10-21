@@ -1,15 +1,23 @@
 {
   "schema_version": 1,
-  "resolution": [1080, 1920],
+  "resolution": [
+    1080,
+    1920
+  ],
   "entry_node": "MailBulkResourceReady",
   "target_page_id": "mail_inbox",
   "captured_at": "2026-10-06T03:04:53Z",
-  "game": {"package": "com.sgbltx.goodgame", "versionName": "7.3"},
+  "game": {
+    "package": "com.sgbltx.goodgame",
+    "versionName": "7.3"
+  },
   "notes": [
     "批量邮件状态只在本任务资源包内生效；每步由当前画面授权并在动作后重新识别。",
     "claimable 使用系统列表可见的奖励附件图标；已读信封外观不单独作为领取成功证据。",
     "本地旧主城正样本显示等级20，新入口样本显示等级45；profile alias 仅是工件元数据，不作为身份认证。主城、更多菜单和系统邮件页面均有实机素材；当前可见邮箱画面无附件候选，尚无有效批量奖励实测。",
-    "随机提示阻断（2026-10-21）：网络异常提示取自 run-20261021T081047Z-8320，魏帝当选公告取自 run-20261020T064958Z-328756，三个资源包共用同一组模板。命中即零输入停止，结果写明人工处理方法；没有按页面校准的空白目标，不点“确定”或空白处。"
+    "随机提示阻断（2026-10-21）：网络异常提示取自 run-20261021T081047Z-8320，魏帝当选公告取自 run-20261020T064958Z-328756，三个资源包共用同一组模板。命中即零输入停止，结果写明人工处理方法；没有按页面校准的空白目标，不点“确定”或空白处。",
+    "2026-10-21：主城身份改为与封地包相同的固定界面 AND（顶部资源栏 + 左下任务入口，min_mean 60）。封地产业收取会让镜头停在被点的产业，旧城墙标记失配会导致本任务无法从主城启动。",
+    "2026-10-21：更多菜单邮件入口改用信封下半部 + “邮件”文字（mail_menu_entry_lower.png），避开未读红点；搜索区留出余量，因实机菜单整体上移约 5 像素。来源 dryrun-20261021T104513Z-44100。"
   ],
   "pages": [
     {
@@ -18,8 +26,22 @@
       "reason_code": "account_conflict",
       "description": "重复登录阻断弹窗。命中即停止并转人工。",
       "verified": true,
-      "identity": [{"template": "page_account_conflict_text.png", "threshold": 0.8, "roi": [120, 830, 840, 350], "verified": true}],
-      "claimable": [], "already_claimed": [], "allowed_actions": []
+      "identity": [
+        {
+          "template": "page_account_conflict_text.png",
+          "threshold": 0.8,
+          "roi": [
+            120,
+            830,
+            840,
+            350
+          ],
+          "verified": true
+        }
+      ],
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
     },
     {
       "page_id": "network_error",
@@ -29,10 +51,32 @@
       "description": "“提示 / 网络有异常,请稍等片刻 / 确定”弹窗：标题与正文同时命中即停止。需要用户重启游戏并手动登录；绝不点“确定”或空白处。",
       "verified": true,
       "identity": [
-        {"template": "page_network_error_title.png", "threshold": 0.97, "roi": [440, 810, 200, 120], "verified": true},
-        {"template": "page_network_error_text.png", "threshold": 0.97, "roi": [150, 940, 780, 110], "verified": true}
+        {
+          "template": "page_network_error_title.png",
+          "threshold": 0.97,
+          "roi": [
+            440,
+            810,
+            200,
+            120
+          ],
+          "verified": true
+        },
+        {
+          "template": "page_network_error_text.png",
+          "threshold": 0.97,
+          "roi": [
+            150,
+            940,
+            780,
+            110
+          ],
+          "verified": true
+        }
       ],
-      "claimable": [], "already_claimed": [], "allowed_actions": []
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
     },
     {
       "page_id": "weidi_announcement",
@@ -42,20 +86,57 @@
       "description": "“魏帝”当选公告（点击任意区域关闭）：只认不含玩家名的标题框。没有按本页面校准的空白关闭目标，只停止、不点击。亮度下限排除压在其他弹窗下变暗的同一公告（前景 47.7/44.9，重复登录遮罩下 13.5）。",
       "verified": true,
       "identity": [
-        {"template": "page_weidi_announcement_title.png", "threshold": 0.97, "roi": [360, 620, 360, 150], "verified": true, "min_mean": 30}
+        {
+          "template": "page_weidi_announcement_title.png",
+          "threshold": 0.97,
+          "roi": [
+            360,
+            620,
+            360,
+            150
+          ],
+          "verified": true,
+          "min_mean": 30
+        }
       ],
-      "claimable": [], "already_claimed": [], "allowed_actions": []
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
     },
     {
       "page_id": "main_city",
       "role": "entry",
-      "description": "主城身份由固定顶部资源 HUD 与稳定城墙局部共同确认；More 点击目标独立识别。",
+      "description": "封地主城场景：顶部资源栏铜币 + 左下“任务”入口文字，均为固定界面，与地图镜头位置无关。点击产业气泡后镜头会移到该产业并停留，因此不使用城墙等地图元素。 两项均要求命中区域平均亮度≥60：实机主城为 89.6/87.8，魏帝公告、“更多”菜单与奖励弹窗遮罩下均为 27.0/26.5。",
       "verified": true,
       "identity": [
-        {"template": "main_city_resource_coin.png", "threshold": 0.97, "roi": [400, 110, 130, 100], "verified": true},
-        {"template": "main_city_wall_marker.png", "threshold": 0.97, "roi": [440, 850, 360, 420], "verified": true}
+        {
+          "template": "main_city_resource_coin.png",
+          "roi": [
+            400,
+            110,
+            130,
+            100
+          ],
+          "threshold": 0.97,
+          "verified": true,
+          "min_mean": 60
+        },
+        {
+          "template": "daily_task_entry_label.png",
+          "roi": [
+            80,
+            1540,
+            200,
+            180
+          ],
+          "threshold": 0.97,
+          "verified": true,
+          "min_mean": 60
+        }
       ],
-      "claimable": [], "already_claimed": [], "allowed_actions": []
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
     },
     {
       "page_id": "more_menu",
@@ -63,11 +144,38 @@
       "description": "更多菜单身份：菜单标题和系统邮件入口同时命中。",
       "verified": true,
       "identity": [
-        {"template": "more_menu_title.png", "threshold": 0.98, "roi": [422, 590, 236, 72], "verified": true},
-        {"template": "mail_menu_entry.png", "threshold": 0.97, "roi": [835, 696, 210, 218], "verified": true}
+        {
+          "template": "more_menu_title.png",
+          "threshold": 0.98,
+          "roi": [
+            422,
+            590,
+            236,
+            72
+          ],
+          "verified": true
+        },
+        {
+          "template": "mail_menu_entry_lower.png",
+          "threshold": 0.97,
+          "roi": [
+            805,
+            660,
+            270,
+            280
+          ],
+          "verified": true
+        }
       ],
-      "claimable": [], "already_claimed": [],
-      "allowed_actions": [{"action_id": "open_system_mail", "description": "打开系统邮件", "verified": true}]
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": [
+        {
+          "action_id": "open_system_mail",
+          "description": "打开系统邮件",
+          "verified": true
+        }
+      ]
     },
     {
       "page_id": "mail_inbox",
@@ -75,12 +183,50 @@
       "description": "系统邮件页：标题与系统页签都命中后才成立。待领取附件图标只在邮件列表区域识别。",
       "verified": true,
       "identity": [
-        {"template": "inbox_window_title.png", "threshold": 0.98, "roi": [430, 345, 220, 75], "verified": true},
-        {"template": "system_tab_identity.png", "threshold": 0.98, "roi": [35, 415, 180, 110], "verified": true}
+        {
+          "template": "inbox_window_title.png",
+          "threshold": 0.98,
+          "roi": [
+            430,
+            345,
+            220,
+            75
+          ],
+          "verified": true
+        },
+        {
+          "template": "system_tab_identity.png",
+          "threshold": 0.98,
+          "roi": [
+            35,
+            415,
+            180,
+            110
+          ],
+          "verified": true
+        }
       ],
-      "claimable": [{"template": "mail_attachment_seal.png", "threshold": 0.96, "roi": [900, 510, 135, 970], "verified": true}],
+      "claimable": [
+        {
+          "template": "mail_attachment_seal.png",
+          "threshold": 0.96,
+          "roi": [
+            900,
+            510,
+            135,
+            970
+          ],
+          "verified": true
+        }
+      ],
       "already_claimed": [],
-      "allowed_actions": [{"action_id": "read_all_system_mail", "description": "系统邮件一键阅读并领取附件（最多提交一次）", "verified": true}]
+      "allowed_actions": [
+        {
+          "action_id": "read_all_system_mail",
+          "description": "系统邮件一键阅读并领取附件（最多提交一次）",
+          "verified": true
+        }
+      ]
     },
     {
       "page_id": "reward_popup",
@@ -88,10 +234,32 @@
       "description": "批量邮件奖励前景：奖励标题与‘点击任意区域关闭’提示同时命中；独立奖励物品模板另行确认内容。",
       "verified": true,
       "identity": [
-        {"template": "bulk_reward_title.png", "threshold": 0.97, "roi": [360, 650, 360, 120], "verified": true},
-        {"template": "bulk_reward_dismiss_hint.png", "threshold": 0.97, "roi": [330, 1080, 420, 110], "verified": true}
+        {
+          "template": "bulk_reward_title.png",
+          "threshold": 0.97,
+          "roi": [
+            360,
+            650,
+            360,
+            120
+          ],
+          "verified": true
+        },
+        {
+          "template": "bulk_reward_dismiss_hint.png",
+          "threshold": 0.97,
+          "roi": [
+            330,
+            1080,
+            420,
+            110
+          ],
+          "verified": true
+        }
       ],
-      "claimable": [], "already_claimed": [], "allowed_actions": []
+      "claimable": [],
+      "already_claimed": [],
+      "allowed_actions": []
     }
   ]
 }

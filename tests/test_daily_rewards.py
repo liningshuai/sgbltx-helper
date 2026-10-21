@@ -284,12 +284,12 @@ def test_main_city_and_hub_navigation_waits_for_fresh_expected_pages(tmp_path: P
     config["max_daily_pages"] = 1
     config_path.write_text(json.dumps(config), encoding="utf-8")
     backend = FakeBackend(script=[
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True, "daily_task_entry_label.png": True},
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True},  # stale transition frame
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},  # stale transition frame
         {"daily_hub_title.png": True, "daily_tab_label.png": True},
         {"daily_hub_title.png": True, "daily_tab_label.png": True},  # stale selected-tab frame
         {"daily_tasks_header.png": True, "daily_tasks_completed_label.png": True, "daily_tasks_back_arrow.png": True},
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True},
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},
     ])
     result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
     assert result.status is RunStatus.NEEDS_ATTENTION
@@ -332,7 +332,7 @@ def test_daily_dry_run_returns_inspection_without_any_input(tmp_path: Path) -> N
     project = _daily_project(tmp_path)
     backend = FakeBackend(script=[{
         "main_city_resource_coin.png": True,
-        "main_city_wall_marker.png": True,
+        "daily_task_entry_label.png": True,
     }])
     result = run(_daily_request(RunMode.DRY_RUN), backend, project.root / "artifacts" / "locks", project.root)
     assert isinstance(result, InspectionResult)
@@ -344,7 +344,7 @@ def _daily_claim_state(*, available: bool, reward: bool = False, home: bool = Fa
                        claimed: bool = True) -> dict[str, bool]:
     state: dict[str, bool] = {}
     if home:
-        state.update({"main_city_resource_coin.png": True, "main_city_wall_marker.png": True})
+        state.update({"main_city_resource_coin.png": True, "daily_task_entry_label.png": True})
         return state
     if reward:
         state.update({"daily_reward_title.png": True, "daily_reward_dismiss_hint_live.png": True,
@@ -850,7 +850,7 @@ def test_registered_notice_after_navigation_stops_with_its_reason_and_manual_fix
     project = _daily_project(tmp_path)
     _short_daily_wait(project)
     backend = FakeBackend(script=[
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True, "daily_task_entry_label.png": True},
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},
         _NETWORK_NOTICE,
     ])
     result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
@@ -1065,8 +1065,7 @@ def test_terminal_capture_error_never_authorizes_cleanup_on_stale_frame(tmp_path
 def test_daily_entry_click_is_followed_by_fresh_capture_and_unknown_stops(tmp_path: Path) -> None:
     project = _daily_project(tmp_path)
     backend = FakeBackend(script=[
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True,
-         "daily_task_entry_label.png": True},
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},
         {"unregistered_daily_page.png": True},
     ])
     result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
@@ -1104,7 +1103,7 @@ def test_daily_unknown_button_state_does_not_scroll_and_safely_returns_home(tmp_
     backend = FakeBackend(script=[
         {"daily_tasks_header.png": True, "daily_tasks_completed_label.png": True, "daily_tasks_back_arrow.png": True},
         {"daily_tasks_header.png": True, "daily_tasks_completed_label.png": True, "daily_tasks_back_arrow.png": True},
-        {"main_city_resource_coin.png": True, "main_city_wall_marker.png": True, "daily_task_entry_label.png": True},
+        {"main_city_resource_coin.png": True, "daily_task_entry_label.png": True},
     ])
     result = run(_daily_request(RunMode.EXECUTE), backend, project.root / "artifacts" / "locks", project.root)
     assert result.status is RunStatus.NEEDS_ATTENTION

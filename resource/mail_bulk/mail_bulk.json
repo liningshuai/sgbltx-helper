@@ -1,24 +1,192 @@
 {
-  "transition_wait_seconds": 8,
-  "max_reward_popups": 26,
-  "reward_items": [
-    {"template": "bulk_reward_gold.png", "roi": [100, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_competition.png", "roi": [320, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_silver.png", "roi": [525, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_grain.png", "roi": [740, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_merit.png", "roi": [400, 800, 300, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_hero_skill_packet.png", "roi": [100, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_battle_flag_chest.png", "roi": [310, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_heart_chest.png", "roi": [520, 800, 240, 300], "threshold": 0.97, "verified": true},
-    {"template": "bulk_reward_dream_dust.png", "roi": [730, 800, 240, 300], "threshold": 0.97, "verified": true}
-  ],
-  "empty_state": {"template": "inbox_bulk_button_disabled.png", "roi": [300, 1480, 500, 220], "threshold": 0.97, "verified": true, "description": "实机系统邮件列表中一键阅读按钮呈禁用灰态，且本次列表邮件均显示已失效；不是批量领取成功证据。"},
-  "controls": {
-    "more": {"template": "more_action_icon_core.png", "roi": [940, 1630, 140, 115], "threshold": 0.97, "verified": true, "description": "主城右下角更多图形中心；避开通知点与地图背景，点击中心由模板识别返回"},
-    "mail": {"template": "mail_menu_entry.png", "roi": [835, 696, 210, 218], "threshold": 0.97, "verified": true, "description": "更多菜单中的系统邮件入口；等级20角色实机菜单回放确认"},
-    "bulk_read": {"template": "inbox_bulk_button.png", "roi": [300, 1480, 500, 220], "threshold": 0.97, "verified": true, "description": "系统页签一键阅读"},
-    "mail_close": {"template": "inbox_close_x.png", "roi": [25, 335, 125, 95], "threshold": 0.97, "verified": true, "description": "邮件列表左上关闭"},
-    "detail_close": {"template": "mail_reward_close_x.png", "roi": [25, 410, 125, 130], "threshold": 0.95, "verified": false, "description": "邮件详情关闭控件待采集验证"},
-    "reward_close": {"template": "bulk_reward_dismiss_hint.png", "roi": [330, 1080, 420, 110], "threshold": 0.97, "verified": true, "description": "批量奖励弹窗底部‘点击任意区域关闭’提示；通过该提示区域中心点击"}
+ "transition_wait_seconds": 8,
+ "max_reward_popups": 26,
+ "reward_items": [
+  {
+   "template": "bulk_reward_gold.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_competition.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_silver.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_grain.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_merit.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_hero_skill_packet.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_battle_flag_chest.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_heart_chest.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
+  },
+  {
+   "template": "bulk_reward_dream_dust.png",
+   "roi": [
+    60,
+    780,
+    960,
+    340
+   ],
+   "threshold": 0.97,
+   "verified": true
   }
+ ],
+ "empty_state": {
+  "template": "inbox_bulk_button_disabled.png",
+  "roi": [
+   300,
+   1480,
+   500,
+   220
+  ],
+  "threshold": 0.97,
+  "verified": true,
+  "description": "实机系统邮件列表中一键阅读按钮呈禁用灰态，且本次列表邮件均显示已失效；不是批量领取成功证据。"
+ },
+ "controls": {
+  "more": {
+   "template": "more_action_icon_core.png",
+   "roi": [
+    940,
+    1630,
+    140,
+    115
+   ],
+   "threshold": 0.97,
+   "verified": true,
+   "description": "主城右下角更多图形中心；避开通知点与地图背景，点击中心由模板识别返回"
+  },
+  "mail": {
+   "template": "mail_menu_entry_lower.png",
+   "roi": [
+    805,
+    660,
+    270,
+    280
+   ],
+   "threshold": 0.97,
+   "verified": true,
+   "description": "更多菜单中的系统邮件入口：信封下半部与“邮件”文字，避开未读红点；点击位置为模板中心"
+  },
+  "bulk_read": {
+   "template": "inbox_bulk_button.png",
+   "roi": [
+    300,
+    1480,
+    500,
+    220
+   ],
+   "threshold": 0.97,
+   "verified": true,
+   "description": "系统页签一键阅读"
+  },
+  "mail_close": {
+   "template": "inbox_close_x.png",
+   "roi": [
+    25,
+    335,
+    125,
+    95
+   ],
+   "threshold": 0.97,
+   "verified": true,
+   "description": "邮件列表左上关闭"
+  },
+  "detail_close": {
+   "template": "mail_reward_close_x.png",
+   "roi": [
+    25,
+    410,
+    125,
+    130
+   ],
+   "threshold": 0.95,
+   "verified": false,
+   "description": "邮件详情关闭控件待采集验证"
+  },
+  "reward_close": {
+   "template": "bulk_reward_dismiss_hint.png",
+   "roi": [
+    330,
+    1080,
+    420,
+    110
+   ],
+   "threshold": 0.97,
+   "verified": true,
+   "description": "批量奖励弹窗底部‘点击任意区域关闭’提示；通过该提示区域中心点击"
+  }
+ },
+ "reward_items_note": "2026-10-21：奖励物品在整条奖励横幅内搜索（[60,780,960,340]），不再绑定固定格位；四件奖励时黄金位于第 3 格。物品只用于确认奖励内容，命中任一已登记物品即可。"
 }

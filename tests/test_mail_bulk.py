@@ -785,3 +785,53 @@ def test_bulk_closes_sixteen_rewards_in_one_run_within_action_cap(tmp_path):
     assert result.status is RunStatus.COMPLETED, result.detail["message"]
     assert result.detail["reward_popup_count"] == 16
     assert result.action_count == 20
+
+
+
+@pytest.mark.parametrize("tag", ["badge", "plain"])
+def test_real_more_menu_mail_entry_survives_badge_and_layout_shift(tag):
+    """2026-10-21 实机：有未读邮件时邮件图标右上角出现红点，且菜单整体上移约 5 像素。"""
+    import numpy as np
+    from PIL import Image
+    from sgbltx_helper.classification import classify
+    from sgbltx_helper.maa_adapter import MaaBackend
+    from sgbltx_helper.pages import load_page_catalog
+
+    resource = Path(__file__).resolve().parents[1] / "resource" / "mail_bulk"
+    canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+    canvas.paste(Image.open(Path(__file__).resolve().parent / "fixtures" / f"more_menu_mail_{tag}_roi.png").convert("RGB"), (400, 560))
+    image = np.ascontiguousarray(np.asarray(canvas)[:, :, ::-1])
+    backend = MaaBackend(adb_path="", address="")
+    backend.load_resource(resource, task_id="mail_bulk_claim")
+    try:
+        cls = classify(backend, image, load_page_catalog(resource / "pages.json"))
+        assert cls.page is not None and cls.page.page_id == "more_menu"
+        control = json.loads((resource / "mail_bulk.json").read_text(encoding="utf-8"))["controls"]["mail"]
+        outcome = backend.recognize(image, control["template"], tuple(control["roi"]), control["threshold"])
+        assert outcome.hit and outcome.center is not None
+        x, y = outcome.center
+        assert 860 <= x <= 1010 and 700 <= y <= 900  # 落在邮件图标/文字上
+    finally:
+        backend.close()
+
+
+
+def test_real_four_item_reward_popup_items_are_matched_in_any_slot():
+    """2026-10-21 实机：四件奖励（银两、粮草、黄金、竞技币）时黄金在第 3 格，按固定格位 ROI 会漏检。"""
+    import numpy as np
+    from PIL import Image
+    from sgbltx_helper.mail_bulk import match_reward_items
+    from sgbltx_helper.maa_adapter import MaaBackend
+
+    resource = Path(__file__).resolve().parents[1] / "resource" / "mail_bulk"
+    canvas = Image.new("RGB", (1080, 1920), (0, 0, 0))
+    canvas.paste(Image.open(Path(__file__).resolve().parent / "fixtures" / "mail_reward_four_items_roi.png").convert("RGB"), (0, 600))
+    image = np.ascontiguousarray(np.asarray(canvas)[:, :, ::-1])
+    config = json.loads((resource / "mail_bulk.json").read_text(encoding="utf-8"))
+    backend = MaaBackend(adb_path="", address="")
+    backend.load_resource(resource, task_id="mail_bulk_claim")
+    try:
+        matches = match_reward_items(backend, image, config["reward_items"])
+    finally:
+        backend.close()
+    assert {"bulk_reward_gold.png", "bulk_reward_competition.png"} <= set(matches)

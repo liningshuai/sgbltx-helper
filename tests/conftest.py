@@ -86,7 +86,8 @@ class FakeBackend:
         idx = min(self.screencap_count, len(self.script) - 1) if self.script else 0
         self._current = dict(self.script[idx]) if self.script else {}
         self.screencap_count += 1
-        return np.zeros((self.resolution[1], self.resolution[0], 3), dtype=np.uint8)
+        # 中灰而非全黑：真实主城未被遮罩时固定界面平均亮度约 88，页面身份的 min_mean 据此判断无遮罩。
+        return np.full((self.resolution[1], self.resolution[0], 3), 128, dtype=np.uint8)
 
     def raw_resolution(self) -> tuple[int, int]:
         return self.resolution

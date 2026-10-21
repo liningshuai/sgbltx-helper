@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from sgbltx_helper.dashboard.jobs import JobManager
-from sgbltx_helper.dashboard.registry import get_profile, list_profiles, list_tasks
+from sgbltx_helper.dashboard.registry import get_profile, list_catalog, list_profiles, list_tasks
 from sgbltx_helper.dashboard.settings import SettingsStore
 from sgbltx_helper.dashboard.evidence import list_runs, read_run, resolve_image
 from sgbltx_helper.dashboard.server import create_server
@@ -541,6 +541,7 @@ def test_http_get_is_read_only_and_serves_fixed_static_page(tmp_path):
         assert state["modules"]["mail_bulk_claim"]["enabled"] is True
         assert state["modules"]["claim_primary"]["enabled"] is False
         assert state["modules"]["daily_rewards_claim"]["enabled"] is False
+        assert [group["title"] for group in state["catalog"]] == [group["title"] for group in list_catalog()]
         assert state["active_job"] is None
         assert calls == []
         status, _, body = _request(base, "/")
@@ -788,3 +789,34 @@ def test_one_click_launcher_uses_its_own_directory_and_keeps_errors_visible():
     assert 'cd /d "%~dp0"' in launcher
     assert '".venv\\Scripts\\python.exe" -m sgbltx_helper dashboard' in launcher
     assert "pause" in launcher
+
+
+def test_feature_catalog_mirrors_reference_tiers_and_derives_task_status():
+    catalog = list_catalog()
+    titles = [group["title"] for group in catalog]
+    assert titles == ["挂机", "基础功能", "高级功能", "钻石功能"]
+    features = [feature for group in catalog for feature in group["features"]]
+    names = [feature["name"] for feature in features]
+    assert len(names) == len(set(names))
+    # 每个已登记任务恰好出现一次，状态由其验收文案推导
+    by_task = {feature["task_id"]: feature for feature in features if feature.get("task_id")}
+    assert set(by_task) == {task["task_id"] for task in list_tasks()}
+    for task in list_tasks():
+        expected = "accepted" if task["acceptance"].startswith("已验收") else "in_progress"
+        assert by_task[task["task_id"]]["status"] == expected
+    assert all(feature["status"] in {"accepted", "in_progress", "recommended", "planned"} for feature in features)
+    recommended = {feature["name"] for feature in features if feature["status"] == "recommended"}
+    assert recommended == {"一键挂机", "每日政务"}
+    for reference in ("自动派兵", "沙盘演绎", "异族入侵", "商店购买", "智能航海"):
+        assert reference in names
+
+
+def test_dashboard_catalog_view_renders_status_and_search():
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node.js is required for the actual app.js VM regression harness")
+    script = SOURCE_PROJECT / "tests" / "dashboard_catalog_probe.cjs"
+    completed = subprocess.run([node, str(script), str(SOURCE_PROJECT / "src" / "sgbltx_helper" / "dashboard" / "static" / "app.js")],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert '"catalogRendered":true' in completed.stdout

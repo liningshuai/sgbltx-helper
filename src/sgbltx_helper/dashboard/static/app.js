@@ -79,6 +79,7 @@ async function loadState() {
     }
     renderProfileSelect();
     renderModules();
+    renderCatalog();
     renderSettings();
     renderJob();
     renderSubmissionRecovery();
@@ -164,6 +165,60 @@ function renderModules() {
 }
 
 function statusText(status) { return statusNames[status] || status || "状态未知"; }
+
+const catalogStatus = {
+  accepted: { label: "已验收", className: "is-accepted" },
+  in_progress: { label: "开发中", className: "is-progress" },
+  recommended: { label: "推荐下一步", className: "is-recommended" },
+  planned: { label: "未开始", className: "is-planned" },
+};
+
+function renderCatalog() {
+  const container = $("#catalog-groups");
+  const summary = $("#catalog-summary");
+  container.replaceChildren();
+  summary.replaceChildren();
+  const catalog = state.server?.catalog;
+  if (!Array.isArray(catalog)) {
+    container.append(el("p", "catalog-empty", "功能目录暂未读取；请刷新页面或重启本地服务。"));
+    return;
+  }
+  const query = ($("#catalog-search").value || "").trim();
+  const counts = { accepted: 0, in_progress: 0, recommended: 0, planned: 0 };
+  let total = 0;
+  for (const group of catalog) {
+    for (const feature of group.features || []) { total += 1; counts[feature.status] = (counts[feature.status] || 0) + 1; }
+  }
+  for (const [status, meta] of Object.entries(catalogStatus)) {
+    const pill = el("span", "catalog-count " + meta.className);
+    pill.append(el("span", "catalog-dot"), el("span", "", meta.label + " " + (counts[status] || 0)));
+    summary.append(pill);
+  }
+  summary.append(el("span", "catalog-total", "共 " + total + " 项"));
+  for (const group of catalog) {
+    const features = (group.features || []).filter(feature => !query || feature.name.includes(query) || (feature.note || "").includes(query));
+    if (query && !features.length) continue;
+    const card = el("section", "catalog-group");
+    const head = el("div", "catalog-group-head");
+    head.append(el("h3", "", group.title));
+    if (group.subtitle) head.append(el("span", "catalog-group-sub", group.subtitle));
+    const accepted = (group.features || []).filter(feature => feature.status === "accepted").length;
+    head.append(el("span", "catalog-group-count", accepted + "/" + (group.features || []).length + " 已验收"));
+    card.append(head);
+    const grid = el("div", "feature-grid");
+    for (const feature of features) {
+      const meta = catalogStatus[feature.status] || catalogStatus.planned;
+      const chip = el("div", "feature-chip " + meta.className);
+      chip.setAttribute("title", feature.note || meta.label);
+      chip.append(el("span", "feature-name", feature.name), el("span", "feature-status", meta.label));
+      if (feature.note && feature.status !== "planned") chip.append(el("span", "feature-note", feature.note));
+      grid.append(chip);
+    }
+    card.append(grid);
+    container.append(card);
+  }
+  if (query && !container.children.length) container.append(el("p", "catalog-empty", "没有匹配“" + query + "”的功能。"));
+}
 
 function appendResultFacts(body, result) {
   const detail = result.detail || {};
@@ -482,8 +537,8 @@ function renderSettings() {
 function switchView(view) {
   state.activeView = view;
   for (const button of document.querySelectorAll(".nav-item")) button.classList.toggle("is-active", button.dataset.view === view);
-  for (const id of ["modules", "runs", "settings"]) $(`#${id}-view`).hidden = id !== view;
-  $("#page-title").textContent = ({ modules: "功能模块", runs: "运行记录", settings: "设置" })[view];
+  for (const id of ["catalog", "modules", "runs", "settings"]) $(`#${id}-view`).hidden = id !== view;
+  $("#page-title").textContent = ({ catalog: "功能总览", modules: "功能模块", runs: "运行记录", settings: "设置" })[view];
   if (view === "runs") loadRuns();
 }
 
@@ -515,6 +570,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   for (const button of document.querySelectorAll(".nav-item")) button.addEventListener("click", () => switchView(button.dataset.view));
   $("#profile-select").addEventListener("change", chooseProfile);
   $("#refresh-runs").addEventListener("click", loadRuns);
+  $("#catalog-search").addEventListener("input", renderCatalog);
   $("#retry-submission").addEventListener("click", retryPendingSubmission);
   $("#abandon-submission").addEventListener("click", abandonPendingSubmission);
   renderSubmissionRecovery();

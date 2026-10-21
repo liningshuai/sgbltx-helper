@@ -28,7 +28,7 @@ TASKS: tuple[dict[str, Any], ...] = (
         "route": "需由用户手动打开指定的太守奖励邮件详情",
         "run_label": "运行单封领取",
         "run_title": "仅运行已登记的单封领取任务",
-        "acceptance": "单封领取已验证；需手动进入指定邮件详情",
+        "acceptance": "已验收：单封领取已实机验证；需手动进入指定邮件详情",
         "description": "用户手动打开指定太守奖励详情后执行。",
     },
     {
@@ -67,6 +67,57 @@ TASKS: tuple[dict[str, Any], ...] = (
         ],
     },
 )
+
+# 功能目录：分档参照用户购买的商用辅助“挂机设置”页；已登记任务的状态由其验收文案推导。
+_REFERENCE_TIERS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("基础功能", ("沙盘演绎", "比武大会", "蓬莱寻宝", "过关斩将", "群雄逐鹿", "见证传奇", "酒馆招募",
+                  "珍宝阁", "商店购买", "折扣商店", "限时免单", "国家商店")),
+    ("高级功能", ("异邦挑战", "城池拜访", "自动民情", "每日政务", "每日黄巾", "异族入侵", "封地管理",
+                  "每日切磋", "魂玉合成", "万象轩")),
+    ("钻石功能", ("自动派兵", "城池建设", "产业施政", "自动擂台", "智能跨服", "鸿阁争锋", "遗珍坊", "天命之战",
+                  "朝廷密旨", "恒古梦魇", "智能航海", "寻龙分金", "天工坊", "安邦之路", "镇魂塔", "神灵托管",
+                  "聊天记录", "三界酒肆", "英雄轮回", "资料库")),
+)
+_RECOMMENDED: dict[str, str] = {
+    "一键挂机": "依次运行已验收的邮件、日常、封地产业任务；之后再加定时。",
+    "每日政务": "位于已能进入的“任务”页“政务”页签，导航成本最低；需先实机确认是否为纯领取。",
+}
+_PLANNED_CORE: dict[str, str] = {"定时运行": "按游戏每日重置时间自动执行一键挂机；重置时间需实机确认。"}
+# “日常收益”下已实现的任务（商用辅助把邮件、日常、产业等收益归在同一项）
+_DAILY_INCOME_TASKS = ("mail_bulk_claim", "daily_rewards_claim", "fief_industry_collect", "claim_primary")
+
+
+def _feature(name: str, status: str, note: str = "", task_id: str | None = None) -> dict[str, Any]:
+    feature: dict[str, Any] = {"name": name, "status": status, "note": note}
+    if task_id:
+        feature["task_id"] = task_id
+    return feature
+
+
+def list_catalog() -> list[dict[str, Any]]:
+    tasks = {task["task_id"]: task for task in TASKS}
+    core = [_feature("一键挂机", "recommended", _RECOMMENDED["一键挂机"])]
+    core += [_feature(name, "planned", note) for name, note in _PLANNED_CORE.items()]
+    income = [
+        _feature(
+            tasks[task_id]["name"],
+            "accepted" if str(tasks[task_id]["acceptance"]).startswith("已验收") else "in_progress",
+            str(tasks[task_id]["acceptance"]),
+            task_id,
+        )
+        for task_id in _DAILY_INCOME_TASKS if task_id in tasks
+    ]
+    groups = [{"title": "挂机", "subtitle": "串联与定时", "features": core}]
+    for title, names in _REFERENCE_TIERS:
+        features = list(income) if title == "基础功能" else []
+        for name in names:
+            if name in _RECOMMENDED:
+                features.append(_feature(name, "recommended", _RECOMMENDED[name]))
+            else:
+                features.append(_feature(name, "planned"))
+        groups.append({"title": title, "subtitle": "日常收益已实现" if title == "基础功能" else "", "features": features})
+    return groups
+
 
 _PROFILES: tuple[tuple[str, str, str], ...] = (
     ("local-main", "config/local.json", "高级工具档案"),

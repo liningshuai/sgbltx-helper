@@ -15,7 +15,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from .evidence import list_runs, read_run, resolve_image
 from .jobs import Executor, JobManager, default_executor
-from .registry import list_profiles, list_tasks
+from .registry import list_catalog, list_profiles, list_tasks
 from .settings import SettingsStore
 
 _MAX_BODY = 16 * 1024
@@ -170,6 +170,7 @@ def _handler_class():
                     "instance_id": self.server.dashboard_instance_id,
                     "modules": modules,
                     "profiles": list_profiles(self.server.dashboard_project_root),
+                    "catalog": list_catalog(),
                     "selected_profile_id": settings["selected_profile_id"],
                     "device_status": "not_checked",
                     "job": job_state["job"],

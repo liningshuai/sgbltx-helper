@@ -4,7 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="dashboard-token" content="__DASHBOARD_TOKEN__">
-  <meta name="theme-color" content="#f4f6f5">
+  <meta name="theme-color" content="#f4eee2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1714" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
   <title>兵临天下 · 本地助手</title>
   <link rel="stylesheet" href="/app.css">
   <script src="/app.js" defer></script>
@@ -12,13 +14,13 @@
 <body>
   <div class="shell">
     <aside class="sidebar" aria-label="主导航">
-      <a class="brand" href="#modules" aria-label="兵临天下本地助手首页">
+      <a class="brand" href="#console" aria-label="兵临天下本地助手首页">
         <span class="brand-mark" aria-hidden="true">兵</span>
         <span><strong>本地助手</strong><small>SG BLTX · LOCAL</small></span>
       </a>
       <nav class="nav-list">
-        <button class="nav-item" data-view="catalog" type="button"><span aria-hidden="true">◈</span>功能总览</button>
-        <button class="nav-item is-active" data-view="modules" type="button"><span aria-hidden="true">▦</span>功能模块</button>
+        <button class="nav-item is-active" data-view="console" type="button"><span aria-hidden="true">◈</span>控制台</button>
+        <button class="nav-item" data-view="modules" type="button"><span aria-hidden="true">▦</span>功能模块</button>
         <button class="nav-item" data-view="runs" type="button"><span aria-hidden="true">◷</span>运行记录</button>
         <button class="nav-item" data-view="settings" type="button"><span aria-hidden="true">⚙</span>设置</button>
       </nav>
@@ -33,7 +35,7 @@
       <header class="topbar">
         <div>
           <div class="eyebrow">三国兵临天下 / 本地控制台</div>
-          <h1 id="page-title">功能模块</h1>
+          <h1 id="page-title">控制台</h1>
         </div>
         <div class="service-chip"><span class="status-dot"></span>本地服务运行中</div>
       </header>
@@ -57,7 +59,36 @@
         <div class="context-value"><span class="context-label">连接状态</span><strong class="not-checked"><span class="tiny-dot"></span>尚未检查</strong></div>
       </section>
 
-      <section id="modules-view" class="view" aria-labelledby="page-title">
+      <section id="job-panel" class="job-panel" aria-live="polite" hidden></section>
+
+      <section id="console-view" class="view" aria-labelledby="page-title">
+        <section class="hangup-bar" aria-label="一键挂机">
+          <div class="hangup-mark" aria-hidden="true">挂</div>
+          <div class="hangup-text">
+            <h2>一键挂机</h2>
+            <p>将依次运行系统邮件、日常任务与封地产业，任一任务停下即整体停止并说明原因。功能开发中，现在可在下方逐个运行。</p>
+          </div>
+          <span class="hangup-badge">开发中</span>
+        </section>
+        <div class="section-heading">
+          <div><h2>今日任务</h2><p>每个任务最近一次正式执行的结果；只读检查不计入。</p></div>
+          <button class="button button-quiet" type="button" data-goto="runs">查看运行记录</button>
+        </div>
+        <div id="console-cards" class="console-cards"></div>
+        <details id="catalog-fold" class="catalog-fold" open>
+          <summary><span class="catalog-fold-title">功能总览</span><span id="catalog-fold-count" class="catalog-fold-count"></span></summary>
+          <div class="catalog-fold-body">
+            <div class="catalog-toolbar">
+              <p>分档参照商用辅助的“挂机设置”页。</p>
+              <label class="catalog-search">搜索功能<input id="catalog-search" type="search" placeholder="邮件、政务、派兵" autocomplete="off"></label>
+            </div>
+            <div id="catalog-summary" class="catalog-summary" aria-live="polite"></div>
+            <div id="catalog-groups" class="catalog-groups"></div>
+          </div>
+        </details>
+      </section>
+
+      <section id="modules-view" class="view" aria-labelledby="page-title" hidden>
         <div class="section-heading">
           <div><h2>可用模块</h2><p>开关仅控制是否允许手动启动，不会自动运行。</p></div>
           <span class="section-kicker">仅限领取任务</span>
@@ -68,16 +99,6 @@
           <div><h3>更多日常功能</h3><p>暂未开发，不会创建占位任务或模拟进度。</p></div>
           <span class="future-badge">待开发</span>
         </section>
-        <section id="job-panel" class="job-panel" aria-live="polite" hidden></section>
-      </section>
-
-      <section id="catalog-view" class="view" hidden>
-        <div class="section-heading">
-          <div><h2>功能总览</h2><p>分档参照商用辅助的“挂机设置”页；绿色为已在实机验收的功能，蓝色为推荐的下一步。</p></div>
-          <label class="catalog-search">搜索功能<input id="catalog-search" type="search" placeholder="例如 邮件、政务、派兵" autocomplete="off"></label>
-        </div>
-        <div id="catalog-summary" class="catalog-summary" aria-live="polite"></div>
-        <div id="catalog-groups" class="catalog-groups"></div>
       </section>
 
       <section id="runs-view" class="view" hidden>

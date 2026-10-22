@@ -820,3 +820,26 @@ def test_dashboard_catalog_view_renders_status_and_search():
                                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
     assert completed.returncode == 0, completed.stdout + completed.stderr
     assert '"catalogRendered":true' in completed.stdout
+
+
+def test_console_is_the_default_view_and_folds_the_catalog():
+    page = (SOURCE_PROJECT / "src" / "sgbltx_helper" / "dashboard" / "static" / "index.html").read_text(encoding="utf-8")
+    assert 'class="nav-item is-active" data-view="console"' in page
+    assert 'data-view="catalog"' not in page
+    console_view = page[page.index('id="console-view"'):page.index('id="modules-view"')]
+    assert 'id="console-cards"' in console_view
+    assert '<details id="catalog-fold"' in console_view
+    assert 'id="catalog-groups"' in console_view
+    # 运行进度面板不再只属于“功能模块”页，控制台启动任务时也能看到
+    assert page.index('id="job-panel"') < page.index('id="console-view"')
+
+
+def test_dashboard_console_view_renders_task_cards_and_runs_tasks():
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node.js is required for the actual app.js VM regression harness")
+    script = SOURCE_PROJECT / "tests" / "dashboard_console_probe.cjs"
+    completed = subprocess.run([node, str(script), str(SOURCE_PROJECT / "src" / "sgbltx_helper" / "dashboard" / "static" / "app.js")],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=15)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert '"consoleRendered":true' in completed.stdout

@@ -11,7 +11,7 @@ function readPendingSubmission() {
   } catch { /* Storage is advisory; no task is auto-submitted on page load. */ }
   return null;
 }
-const state = { server: null, runs: [], activeView: "modules", selectedRun: null, pollTimer: null, lastJobId: null, lastJobStatus: null, pendingSubmission: readPendingSubmission() };
+const state = { server: null, runs: [], runsLoaded: false, activeView: "console", selectedRun: null, pollTimer: null, lastJobId: null, lastJobStatus: null, pendingSubmission: readPendingSubmission() };
 const $ = (selector, root = document) => root.querySelector(selector);
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -162,7 +162,67 @@ function renderModules() {
   if (!state.server) return;
   const busy = Boolean(state.server.active_job || state.pendingSubmission);
   for (const module of Object.values(state.server.modules)) container.append(moduleCard(module, busy));
+  renderConsole();
 }
+
+const CONSOLE_TASKS = ["mail_bulk_claim", "daily_rewards_claim", "fief_industry_collect"];
+const resultTone = { completed: "is-ok", nothing_to_claim: "is-ok", needs_attention: "is-warn", failed: "is-danger", cancelled: "is-danger", evidence_error: "is-danger" };
+
+function formatRunTime(value) {
+  const time = new Date(value || "");
+  if (Number.isNaN(time.getTime())) return "";
+  return time.toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function latestExecuteRun(taskId) {
+  return (state.runs || []).find(run => run.task_id === taskId && run.mode !== "dry-run" && run.status !== "inspection");
+}
+
+function renderConsole() {
+  const container = $("#console-cards");
+  container.replaceChildren();
+  const modules = state.server?.modules;
+  if (!modules) return;
+  const busy = Boolean(state.server.active_job || state.pendingSubmission);
+  for (const taskId of CONSOLE_TASKS) {
+    const module = modules[taskId];
+    if (!module) continue;
+    const card = el("article", "console-card");
+    const head = el("div", "console-card-head");
+    head.append(el("span", "module-icon", module.icon || "◇"), el("h3", "", module.name));
+    card.append(head);
+    const latest = latestExecuteRun(taskId);
+    const result = el("p", "console-result " + (latest ? (resultTone[latest.status] || "") : "is-empty"));
+    const emptyText = state.runsLoaded ? "暂无执行记录" : "正在读取记录";
+    result.append(el("span", "console-dot"), el("span", "", latest ? statusText(latest.status) : emptyText));
+    card.append(result);
+    const meta = [];
+    if (latest) {
+      const when = formatRunTime(latest.started_at);
+      if (when) meta.push(when);
+      if (typeof latest.action_count === "number") meta.push("输入 " + latest.action_count + " 次");
+    }
+    card.append(el("p", "console-meta", meta.length ? meta.join(" · ") : (module.route || "")));
+    const actions = el("div", "console-actions");
+    if (module.enabled) {
+      const run = el("button", "button button-secondary", "运行");
+      run.type = "button";
+      run.disabled = busy;
+      run.title = module.run_title || "";
+      run.addEventListener("click", () => startTask(taskId, "execute"));
+      actions.append(run);
+    } else {
+      const open = el("button", "button button-quiet", "去开启");
+      open.type = "button";
+      open.title = "在功能模块中打开该模块的开关后可运行";
+      open.addEventListener("click", () => switchView("modules"));
+      actions.append(open);
+    }
+    card.append(actions);
+    container.append(card);
+  }
+}
+
 
 function statusText(status) { return statusNames[status] || status || "状态未知"; }
 
@@ -195,6 +255,7 @@ function renderCatalog() {
     summary.append(pill);
   }
   summary.append(el("span", "catalog-total", "共 " + total + " 项"));
+  $("#catalog-fold-count").textContent = "已验收 " + counts.accepted + " / 共 " + total;
   for (const group of catalog) {
     const features = (group.features || []).filter(feature => !query || feature.name.includes(query) || (feature.note || "").includes(query));
     if (query && !features.length) continue;
@@ -465,7 +526,9 @@ async function loadRuns() {
   try {
     const result = await requestJson("/api/runs?limit=100");
     state.runs = result.runs || [];
+    state.runsLoaded = true;
     renderRuns();
+    renderConsole();
     if (state.selectedRun) await openRun(state.selectedRun, false);
   } catch (error) { showNotice(`历史记录暂不可用：${error.message}`, true); }
 }
@@ -537,8 +600,8 @@ function renderSettings() {
 function switchView(view) {
   state.activeView = view;
   for (const button of document.querySelectorAll(".nav-item")) button.classList.toggle("is-active", button.dataset.view === view);
-  for (const id of ["catalog", "modules", "runs", "settings"]) $(`#${id}-view`).hidden = id !== view;
-  $("#page-title").textContent = ({ catalog: "功能总览", modules: "功能模块", runs: "运行记录", settings: "设置" })[view];
+  for (const id of ["console", "modules", "runs", "settings"]) $(`#${id}-view`).hidden = id !== view;
+  $("#page-title").textContent = ({ console: "控制台", modules: "功能模块", runs: "运行记录", settings: "设置" })[view];
   if (view === "runs") loadRuns();
 }
 
@@ -568,6 +631,7 @@ function startPolling() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   for (const button of document.querySelectorAll(".nav-item")) button.addEventListener("click", () => switchView(button.dataset.view));
+  for (const button of document.querySelectorAll("[data-goto]")) button.addEventListener("click", () => switchView(button.dataset.goto));
   $("#profile-select").addEventListener("change", chooseProfile);
   $("#refresh-runs").addEventListener("click", loadRuns);
   $("#catalog-search").addEventListener("input", renderCatalog);
